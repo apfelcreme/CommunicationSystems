@@ -3,6 +3,7 @@ package io.github.apfelcreme.CommunicationKitchen.Client;
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.Drawable;
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawableIngredient;
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePlayer;
+import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePot;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
@@ -173,6 +174,13 @@ public class ServerConnector implements Runnable {
                         DrawingBoard.getInstance().repaint();
                     }
 
+                } else if (message.equals("POTSPAWN")) {
+                    UUID id = UUID.fromString(inputStream.readUTF());                    
+                    int x = inputStream.readInt();
+                    int y = inputStream.readInt();
+                    CommunicationKitchen.getInstance().setDrawablePot(new DrawablePot(id, x, y));
+                    DrawingBoard.getInstance().repaint(); 
+                    
                 } else if (message.equals("MOVE")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     int x = inputStream.readInt();

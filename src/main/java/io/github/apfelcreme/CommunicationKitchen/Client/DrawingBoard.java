@@ -71,7 +71,11 @@ public class DrawingBoard extends JPanel {
             for (DrawableIngredient drawableIngredient : CommunicationKitchen.getInstance().getDrawableIngredients()) {
                 drawableIngredient.draw(g);
             }
-            // end players
+            // end ingredients
+            
+            // pot
+            CommunicationKitchen.getInstance().getDrawablePot().draw(g);
+            
         } catch (IOException e) {
             e.printStackTrace();
         }

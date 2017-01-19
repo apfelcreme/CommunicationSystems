@@ -1,15 +1,23 @@
 package io.github.apfelcreme.CommunicationKitchen.Client;
 
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawableIngredient;
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePlayer;
+import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePot;
 import io.github.apfelcreme.CommunicationKitchen.Client.Listener.KeyListener;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.IOException;
-import java.util.*;
-import java.util.List;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -47,6 +55,7 @@ public class CommunicationKitchen extends JFrame {
 
     private Set<DrawablePlayer> drawablePlayers = new HashSet<DrawablePlayer>();
     private Set<DrawableIngredient> drawableIngredients = new HashSet<DrawableIngredient>();
+    private DrawablePot drawablePot = null;
     private DrawablePlayer me = null;
     private static CommunicationKitchen instance = null;
 
@@ -93,6 +102,20 @@ public class CommunicationKitchen extends JFrame {
 
 
     /**
+	 * @return the drawablePot
+	 */
+	public DrawablePot getDrawablePot() {
+		return drawablePot;
+	}
+
+	/**
+	 * @param drawablePot the drawablePot to set
+	 */
+	public void setDrawablePot(DrawablePot drawablePot) {
+		this.drawablePot = drawablePot;
+	}
+
+	/**
      * returns the list of drawable players
      *
      * @return the list of drawable players

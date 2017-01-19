@@ -1,12 +1,12 @@
 package io.github.apfelcreme.CommunicationKitchen.Server.Entities;
 
+import java.util.UUID;
+
 import io.github.apfelcreme.CommunicationKitchen.Server.ConnectionHandler;
 import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
 import io.github.apfelcreme.CommunicationKitchen.Server.Order;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
-import io.github.apfelcreme.CommunicationKitchen.Client.DrawingBoard;
-
-import java.util.UUID;
+import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -76,6 +76,20 @@ public class Player {
 
         for (Order order : KitchenServer.getInstance().getOrders()) {
 
+        }
+        
+        for (Ingredient ingredient : KitchenServer.getInstance().getIngredients()) {
+        	if (Util.arePositionsEqual(this.x, this.y, ingredient.getX(), ingredient.getY(), 10)) {
+        		System.out.println("Player catched ingredient " + ingredient.getType());
+        		if (this.carrying == null) {
+        			this.carrying = ingredient;
+        			ConnectionHandler.broadcastIngredientDespawn(ingredient);        			
+        		}
+        	}
+        }
+        Pot pot = KitchenServer.getInstance().getPot();
+        if (Util.arePositionsEqual(this.x, this.y, pot.getX(), pot.getY(), 10)) {
+        	this.carrying = null;
         }
 
         // send a message to all clients, so they can redraw the position

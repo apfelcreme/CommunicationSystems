@@ -63,4 +63,8 @@ public class Util {
         }
         return ret;
     }
+    
+    public static boolean arePositionsEqual(int x1, int y1, int x2, int y2, int tolerance) {
+    	return x1 < x2 + tolerance && x1 > x2 - tolerance  && y1 < y2 + tolerance && y1 > y2 - tolerance;
+    }
 }

@@ -2,6 +2,7 @@ package io.github.apfelcreme.CommunicationKitchen.Server;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
+import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
 
 import java.awt.*;
 import java.io.IOException;
@@ -41,6 +42,10 @@ public class KitchenServer implements Runnable {
     private List<Player> players = new ArrayList<Player>();
 
     private List<Order> orders = new ArrayList<Order>();
+    
+    private List<Ingredient> ingredients = new ArrayList<Ingredient>();
+    
+    private Pot pot;
 
     private KitchenServer() {
         try {
@@ -77,10 +82,20 @@ public class KitchenServer implements Runnable {
                         new Random().nextInt(getFieldDimension().width),
                         new Random().nextInt(getFieldDimension().height)
                 );
+                Pot pot = new Pot(
+            			UUID.randomUUID(),
+            			new Random().nextInt(getFieldDimension().width),
+                        new Random().nextInt(getFieldDimension().height)
+        		);
+                KitchenServer.getInstance().pot = pot;
+                ingredients.add(ingredient1);
+                ingredients.add(ingredient2);
+                ingredients.add(ingredient3);
                 orders.add(new Order(ingredient1, ingredient2, ingredient3));
                 ConnectionHandler.broadcastIngredientSpawn(ingredient1);
                 ConnectionHandler.broadcastIngredientSpawn(ingredient2);
                 ConnectionHandler.broadcastIngredientSpawn(ingredient3);
+                ConnectionHandler.broadcastPotSpawn(pot);
             }
         }, 5000, 15000);
         while (!serverSocket.isClosed()) {
@@ -105,6 +120,13 @@ public class KitchenServer implements Runnable {
     }
 
     /**
+	 * @return the pot
+	 */
+	public Pot getPot() {
+		return pot;
+	}
+
+	/**
      * returns the player list
      *
      * @return the list of players that are currently logged in
@@ -158,6 +180,15 @@ public class KitchenServer implements Runnable {
      */
     public List<Order> getOrders() {
         return orders;
+    }
+    
+    /**
+     * returns the list of ingredients that are currently active
+     *
+     * @return the list of ingredients
+     */
+    public List<Ingredient> getIngredients() {
+        return ingredients;
     }
 
     /**

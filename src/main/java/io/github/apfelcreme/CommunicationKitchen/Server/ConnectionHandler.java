@@ -2,6 +2,7 @@ package io.github.apfelcreme.CommunicationKitchen.Server;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
+import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
@@ -148,6 +149,26 @@ public class ConnectionHandler implements Runnable {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 connectionHandler.getOutputStream().writeUTF("INGREDIENTDESPAWN");
                 connectionHandler.getOutputStream().writeUTF(ingredient.getId().toString());
+                connectionHandler.getOutputStream().flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * sends a message to a player that a pot has spawned
+     *
+     * @param pot  - the pot
+     */
+    public static void broadcastPotSpawn(Pot pot) {
+        try {
+            System.out.println("Pot-Spawn (" + pot.getX() + "," + pot.getY() + ")");
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                connectionHandler.getOutputStream().writeUTF("POTSPAWN");
+                connectionHandler.getOutputStream().writeUTF(pot.getId().toString());                
+                connectionHandler.getOutputStream().writeInt(pot.getX());
+                connectionHandler.getOutputStream().writeInt(pot.getY());
                 connectionHandler.getOutputStream().flush();
             }
         } catch (IOException e) {
