@@ -34,6 +34,7 @@ public class DrawablePlayer implements Drawable {
     private int y = 0;
     private BufferedImage image = null;
     private Direction direction = Direction.DOWN;
+    private String chat = "";
 
     public DrawablePlayer(UUID id, int x, int y, Direction direction) {
         this.id = id;
@@ -76,6 +77,7 @@ public class DrawablePlayer implements Drawable {
      */
     public void draw(Graphics g) {
         g.drawImage(image, x, y, null);
+        g.drawString(chat, x + 40, y + 20);
     }
 
     /**
@@ -132,6 +134,14 @@ public class DrawablePlayer implements Drawable {
     public void setDirection(Direction direction) {
         this.direction = direction;
         calcImage();
+    }
+
+    /**
+     * sets the chat message that is displayed next to the player
+     * @param chat the chat message
+     */
+    public void setChat(String chat) {
+        this.chat = chat;
     }
 
     @Override

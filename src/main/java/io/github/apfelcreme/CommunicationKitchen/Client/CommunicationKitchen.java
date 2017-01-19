@@ -50,14 +50,26 @@ import io.github.apfelcreme.CommunicationKitchen.Client.Listener.KeyListener;
  *
  */
 
+    /*
+
+    PRODUCTIVE FAILURE
+
+    Simultane sachen machen lassen
+    asynchrone sachen machen lassen (reihenfolge)
+    JIGSAW (geteilte informationen)
+    unter Zeitdruck sachen machen lassen
+     */
+
 
 public class CommunicationKitchen extends JFrame {
 
     private Set<DrawablePlayer> drawablePlayers = new HashSet<DrawablePlayer>();
     private Set<DrawableIngredient> drawableIngredients = new HashSet<DrawableIngredient>();
-    private DrawablePot drawablePot = null;
     private DrawablePlayer me = null;
     private static CommunicationKitchen instance = null;
+
+    private JTextField chat = new JTextField("Chat");
+    private JButton bSend = new JButton("Send");
 
     private CommunicationKitchen() {
         initGui(50, 50);
@@ -70,18 +82,56 @@ public class CommunicationKitchen extends JFrame {
 
     public void initGui(int width, int height) {
         this.getContentPane().setLayout(new GridBagLayout());
-
         this.getContentPane().add(new JPanel(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
+                new GridBagConstraints(0, 0, 2, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(DrawingBoard.getInstance(),
-                new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+                new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
-        this.setSize(new Dimension(width, height));
-        this.setVisible(true);
-        this.addKeyListener(new KeyListener());
+        this.getContentPane().add(chat,
+                new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0,
+                        GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
+        this.getContentPane().add(bSend,
+                new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
+                        GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
+//        this.addKeyListener(new KeyListener());
+
+        InputMap inputMap = DrawingBoard.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        KeyStroke wKey = KeyStroke.getKeyStroke('w');
+        KeyStroke aKey = KeyStroke.getKeyStroke('a');
+        KeyStroke sKey = KeyStroke.getKeyStroke('s');
+        KeyStroke dKey = KeyStroke.getKeyStroke('d');
+        inputMap.put(wKey, "w");
+        inputMap.put(aKey, "a");
+        inputMap.put(sKey, "s");
+        inputMap.put(dKey, "d");
+        ActionMap actionMap = DrawingBoard.getInstance().getActionMap();
+        actionMap.put("w", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ServerConnector.getInstance().sendPlayerMove(me.getId(), Direction.UP);
+            }
+        });
+        actionMap.put("a", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ServerConnector.getInstance().sendPlayerMove(me.getId(), Direction.LEFT);
+            }
+        });
+        actionMap.put("s", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ServerConnector.getInstance().sendPlayerMove(me.getId(), Direction.DOWN);
+            }
+        });
+        actionMap.put("d", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ServerConnector.getInstance().sendPlayerMove(me.getId(), Direction.RIGHT);
+            }
+        });
+
+
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -89,6 +139,17 @@ public class CommunicationKitchen extends JFrame {
                 System.exit(0);
             }
         });
+        bSend.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                ServerConnector.getInstance().sendChatMessage(me.getId(), chat.getText());
+                chat.setText("");
+                DrawingBoard.getInstance().requestFocus();
+            }
+        });
+        this.setSize(new Dimension(width, height));
+        this.setVisible(true);
+        DrawingBoard.getInstance().requestFocus();
+
 
     }
 

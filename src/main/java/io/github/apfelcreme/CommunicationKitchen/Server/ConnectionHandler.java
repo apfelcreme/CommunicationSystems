@@ -81,12 +81,19 @@ public class ConnectionHandler implements Runnable {
                     if (player != null) {
                         player.move(direction);
                     }
+
                 } else if (message.equals("LOGOUT")) {
                     System.out.println("Logout announced by [" + socket.getInetAddress().getHostName() + "]");
                     UUID id = UUID.fromString(inputStream.readUTF());
                     KitchenServer.getInstance().removePlayer(id);
                     KitchenServer.getInstance().getClientConnections().remove(this);
                     socket.close();
+
+                } else if (message.equals("CHAT")) {
+                    UUID id = UUID.fromString(inputStream.readUTF());
+                    String chat = inputStream.readUTF();
+                    System.out.println("Chat-Message from [" + id + "]: " + chat);
+                    broadcastChatMessage(id, chat);
                 }
             }
         } catch (IOException e) {
@@ -192,6 +199,24 @@ public class ConnectionHandler implements Runnable {
                 connectionHandler.getOutputStream().writeInt(x);
                 connectionHandler.getOutputStream().writeInt(y);
                 connectionHandler.getOutputStream().writeUTF(direction.name());
+                connectionHandler.getOutputStream().flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * broadcasts a message to all players
+     * @param id the sending player id
+     * @param chat the chat message
+     */
+    public static void broadcastChatMessage(UUID id, String chat) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                connectionHandler.getOutputStream().writeUTF("CHAT");
+                connectionHandler.getOutputStream().writeUTF(id.toString());
+                connectionHandler.getOutputStream().writeUTF(chat);
                 connectionHandler.getOutputStream().flush();
             }
         } catch (IOException e) {

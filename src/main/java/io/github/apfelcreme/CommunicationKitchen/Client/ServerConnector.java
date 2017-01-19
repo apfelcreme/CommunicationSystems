@@ -14,6 +14,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 /**
@@ -110,6 +112,23 @@ public class ServerConnector implements Runnable {
     }
 
     /**
+     * sends a move request to the server
+     *
+     * @param id      me (the player who did the key stroke)
+     * @param message the message
+     */
+    public void sendChatMessage(UUID id, String message) {
+        try {
+            outputStream.writeUTF("CHAT");
+            outputStream.writeUTF(id.toString());
+            outputStream.writeUTF(message);
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * sends a message to the server
      *
      * @param message the message
@@ -163,7 +182,8 @@ public class ServerConnector implements Runnable {
                     String type = inputStream.readUTF();
                     int x = inputStream.readInt();
                     int y = inputStream.readInt();
-                    CommunicationKitchen.getInstance().getDrawableIngredients().add(new DrawableIngredient(id, type, x, y));
+                    CommunicationKitchen.getInstance().getDrawableIngredients().add(
+                            new DrawableIngredient(id, type, x, y));
                     DrawingBoard.getInstance().repaint();
 
                 } else if (message.equals("INGREDIENTDESPAWN")) {
@@ -193,7 +213,25 @@ public class ServerConnector implements Runnable {
                         drawablePlayer.setDirection(direction);
                         DrawingBoard.getInstance().repaint();
                     }
+
+                } else if (message.equals("CHAT")) {
+                    UUID id = UUID.fromString(inputStream.readUTF());
+                    String chat = inputStream.readUTF();
+                    final DrawablePlayer drawablePlayer = CommunicationKitchen.getInstance().getDrawablePlayer(id);
+                    if (drawablePlayer != null) {
+                        drawablePlayer.setChat(chat);
+                        DrawingBoard.getInstance().repaint();
+                        new Timer().schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                drawablePlayer.setChat("");
+                                DrawingBoard.getInstance().repaint();
+                            }
+                        }, 5000);
+                    }
                 }
+
+
             }
         } catch (SocketException e) {
             System.out.println("Socket wurde unerwartet geschlossen!");
