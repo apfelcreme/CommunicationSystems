@@ -1,12 +1,13 @@
 package io.github.apfelcreme.CommunicationKitchen.Client.Drawable;
 
-import io.github.apfelcreme.CommunicationKitchen.Client.CommunicationKitchen;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
+import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 /**
@@ -27,42 +28,42 @@ import java.util.UUID;
  *
  * @author Lord36 aka Apfelcreme
  */
-public class DrawablePlayer implements Drawable {
+public class DrawablePlayer extends Drawable {
 
-    private UUID id = null;
-    private int x = 0;
-    private int y = 0;
-    private BufferedImage image = null;
-    private Direction direction = Direction.DOWN;
-    private String chat = "";
+    private Direction direction;
+    private String chat;
+    private DrawableType carrying;
 
-    public DrawablePlayer(UUID id, int x, int y, Direction direction) {
-        this.id = id;
-        this.x = x;
-        this.y = y;
-        this.direction = direction;
+    public DrawablePlayer(UUID id, int x, int y) {
+        super(id, 0, DrawableType.PLAYER, x, y);
+        this.chat = "";
+        this.direction = Direction.DOWN;
+        carrying = DrawableType.NOTHING;
         calcImage();
     }
 
     /**
-     * creates a subimage from the sprite image depending
-     * on the direction the player is direction in
+     * dg
+     * calculates the displayed image depending on the direction the player is facing
      */
     private void calcImage() {
         try {
-            BufferedImage baseImage = ImageIO.read(CommunicationKitchen.class.getResourceAsStream("/Chef1.png"));
             switch (direction) {
+                case DOWN:
+                    image = ImageIO.read(DrawablePlayer.class.getResourceAsStream("/Drawables/PLAYER.png"))
+                            .getSubimage(0, 0, 40, 40);
+                    break;
                 case LEFT:
-                    image = baseImage.getSubimage(0, 40, 40, 40);
+                    image = ImageIO.read(DrawablePlayer.class.getResourceAsStream("/Drawables/PLAYER.png"))
+                            .getSubimage(0, 40, 40, 40);
                     break;
                 case RIGHT:
-                    image = baseImage.getSubimage(0, 80, 40, 40);
+                    image = ImageIO.read(DrawablePlayer.class.getResourceAsStream("/Drawables/PLAYER.png"))
+                            .getSubimage(0, 80, 40, 40);
                     break;
                 case UP:
-                    image = baseImage.getSubimage(0, 120, 40, 40);
-                    break;
-                case DOWN:
-                    image = baseImage.getSubimage(0, 0, 40, 40);
+                    image = ImageIO.read(DrawablePlayer.class.getResourceAsStream("/Drawables/PLAYER.png"))
+                            .getSubimage(0, 120, 40, 40);
                     break;
             }
         } catch (IOException e) {
@@ -75,98 +76,89 @@ public class DrawablePlayer implements Drawable {
      *
      * @param g the graphics object
      */
+    @Override
     public void draw(Graphics g) {
-        g.drawImage(image, x, y, null);
-        g.drawString(chat, x + 40, y + 20);
+        calcImage();
+        super.draw(g);
+
+        if (!chat.isEmpty()) {
+            g.drawString(chat, getX() + 20, getY());
+        }
+
+        try {
+            if (carrying != DrawableType.NOTHING) {
+                g.setColor(Color.WHITE);
+                g.fillOval(getX() - 10, getY() - 50, 25, 25);
+                g.drawImage(ImageIO.read(DrawablePlayer.class
+                        .getResourceAsStream("/Drawables/" + carrying.name() + ".png"))
+                        .getScaledInstance(25, 25, Image.SCALE_SMOOTH), getX() - 10, getY() - 50, null);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
-     * returns the id of the player that is represented by this drawing
-     *
-     * @return a uuid
-     */
-    public UUID getId() {
-        return id;
-    }
-
-    /**
-     * sets x
+     * sets the x coordinate
      *
      * @param x the x coordinate
      */
+    @Override
     public void setX(int x) {
-        this.x = x;
-        calcImage();
+        if (x > this.getX()) {
+            direction = Direction.RIGHT;
+        } else if (x < this.getX()) {
+            direction = Direction.LEFT;
+        }
+        super.setX(x);
     }
 
     /**
-     * sets y
+     * sets the y coordinate
      *
      * @param y the y coordinate
      */
+    @Override
     public void setY(int y) {
-        this.y = y;
-        calcImage();
+        if (y > this.getY()) {
+            direction = Direction.DOWN;
+        } else if (y < this.getY()) {
+            direction = Direction.UP;
+        }
+        super.setY(y);
     }
 
     /**
-     * returns the currently displayed image
+     * sets the chat string
      *
-     * @return the currently displayed image
+     * @param c the chat string
      */
-    public BufferedImage getImage() {
-        return image;
+    public void setChat(String c) {
+        chat = c;
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                chat = "";
+            }
+        }, 5000);
     }
 
     /**
-     * returns the direction the player is looking in
+     * returns the item the player is carrying
      *
-     * @return the direction the player is looking in
+     * @return the item the player is carrying
      */
-    public Direction getDirection() {
-        return direction;
+    public DrawableType getCarrying() {
+        return carrying;
     }
 
     /**
-     * sets the direction the player is looking in
-     * @param direction the direction the player is looking in
+     * sets the item the player is carrying
+     *
+     * @param carrying item the player is carrying
      */
-    public void setDirection(Direction direction) {
-        this.direction = direction;
-        calcImage();
+    public void setCarrying(DrawableType carrying) {
+        this.carrying = carrying;
     }
 
-    /**
-     * sets the chat message that is displayed next to the player
-     * @param chat the chat message
-     */
-    public void setChat(String chat) {
-        this.chat = chat;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        DrawablePlayer that = (DrawablePlayer) o;
-
-        return !(id != null ? !id.equals(that.id) : that.id != null);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return id != null ? id.hashCode() : 0;
-    }
-
-    @Override
-    public String toString() {
-        return "DrawablePlayer{" +
-                "id=" + id +
-                ", x=" + x +
-                ", direction=" + direction +
-                ", y=" + y +
-                '}';
-    }
 }

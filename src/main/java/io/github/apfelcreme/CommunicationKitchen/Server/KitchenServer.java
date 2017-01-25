@@ -1,16 +1,22 @@
 package io.github.apfelcreme.CommunicationKitchen.Server;
 
-import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
 
+import javax.swing.*;
+import javax.swing.text.DefaultCaret;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Connection;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.Timer;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -30,74 +36,87 @@ import java.util.List;
  *
  * @author Lord36 aka Apfelcreme
  */
-public class KitchenServer implements Runnable {
+public class KitchenServer extends JFrame implements Runnable {
 
     private static KitchenServer instance = null;
 
     private ServerSocket serverSocket = null;
-    private Dimension fieldDimension = new Dimension(600, 400);
+    private Dimension fieldDimension = new Dimension(500, 400);
 
     private List<ConnectionHandler> clientConnections = new ArrayList<ConnectionHandler>();
 
     private List<Player> players = new ArrayList<Player>();
 
     private List<Order> orders = new ArrayList<Order>();
-    
-    private List<Ingredient> ingredients = new ArrayList<Ingredient>();
-    
-    private Pot pot;
+
+    private JTextArea log;
+
+    private IngredientSpawner ingredientSpawner = null;
 
     private KitchenServer() {
         try {
+            setGui();
             this.serverSocket = new ServerSocket(1337);
+            log("Start handling connections...");
+            new Thread(this).start();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Start handling connections...");
-        new Thread(this).start();
+    }
+
+    /**
+     * initializes the GUI
+     */
+    private void setGui() {
+        JButton bnStart = new JButton("Start Game");
+        log = new JTextArea();
+        log.setLineWrap(true);
+        log.setWrapStyleWord(true);
+        DefaultCaret caret = (DefaultCaret) log.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        this.setLayout(new GridBagLayout());
+        this.getContentPane().add(bnStart,
+                new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
+                        GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
+        this.getContentPane().add(new JScrollPane(log),
+                new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+                        GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
+        bnStart.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                long time = 15000;
+                if (ingredientSpawner != null) {
+                    ingredientSpawner.cancel();
+                }
+                ingredientSpawner = new IngredientSpawner(time);
+                new Timer().schedule(ingredientSpawner, 0, time);
+            }
+        });
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                try {
+                    if (!serverSocket.isClosed()) {
+                        serverSocket.close();
+                    }
+                    if (ingredientSpawner != null) {
+                        ingredientSpawner.cancel();
+                    }
+                    System.exit(0);
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+        this.setSize(300, 400);
+        this.setVisible(true);
     }
 
     /**
      * basically an endless queue that handles incoming connections
      */
     public void run() {
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Ingredient ingredient1 = new Ingredient(
-                        UUID.randomUUID(),
-                        Ingredient.Type.random(),
-                        new Random().nextInt(getFieldDimension().width),
-                        new Random().nextInt(getFieldDimension().height)
-                );
-                Ingredient ingredient2 = new Ingredient(
-                        UUID.randomUUID(),
-                        Ingredient.Type.random(),
-                        new Random().nextInt(getFieldDimension().width),
-                        new Random().nextInt(getFieldDimension().height)
-                );
-                Ingredient ingredient3 = new Ingredient(
-                        UUID.randomUUID(),
-                        Ingredient.Type.random(),
-                        new Random().nextInt(getFieldDimension().width),
-                        new Random().nextInt(getFieldDimension().height)
-                );
-                Pot pot = new Pot(
-            			UUID.randomUUID(),
-            			new Random().nextInt(getFieldDimension().width),
-                        new Random().nextInt(getFieldDimension().height)
-        		);
-                KitchenServer.getInstance().pot = pot;
-                ingredients.add(ingredient1);
-                ingredients.add(ingredient2);
-                ingredients.add(ingredient3);
-                orders.add(new Order(ingredient1, ingredient2, ingredient3));
-                ConnectionHandler.broadcastIngredientSpawn(ingredient1);
-                ConnectionHandler.broadcastIngredientSpawn(ingredient2);
-                ConnectionHandler.broadcastIngredientSpawn(ingredient3);
-                ConnectionHandler.broadcastPotSpawn(pot);
-            }
-        }, 5000, 15000);
         while (!serverSocket.isClosed()) {
             try {
                 Socket socket = serverSocket.accept();
@@ -111,6 +130,16 @@ public class KitchenServer implements Runnable {
     }
 
     /**
+     * writes a message to the log
+     *
+     * @param message a message
+     */
+    public void log(String message) {
+        log.append("[" + new SimpleDateFormat("HH:mm:ss").format(new Date()) + "] " + message + "\n");
+        System.out.println("[" + new SimpleDateFormat("HH:mm:ss").format(new Date()) + "] " + message);
+    }
+
+    /**
      * returns the size of the kitchen
      *
      * @return the size of the playground that players play on
@@ -120,13 +149,6 @@ public class KitchenServer implements Runnable {
     }
 
     /**
-	 * @return the pot
-	 */
-	public Pot getPot() {
-		return pot;
-	}
-
-	/**
      * returns the player list
      *
      * @return the list of players that are currently logged in
@@ -157,7 +179,6 @@ public class KitchenServer implements Runnable {
      */
     public void removePlayer(UUID id) {
         for (Iterator<Player> plIterator = players.iterator(); plIterator.hasNext(); ) {
-            //TODO: macht noch nich wirklich was..
             if (plIterator.next().getId().equals(id)) {
                 plIterator.remove();
             }
@@ -181,20 +202,11 @@ public class KitchenServer implements Runnable {
     public List<Order> getOrders() {
         return orders;
     }
-    
-    /**
-     * returns the list of ingredients that are currently active
-     *
-     * @return the list of ingredients
-     */
-    public List<Ingredient> getIngredients() {
-        return ingredients;
-    }
 
     /**
      * returns the server singleton instance
      *
-     * @return
+     * @return the server singleton instance
      */
     public static KitchenServer getInstance() {
         if (instance == null) {

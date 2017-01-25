@@ -2,8 +2,8 @@ package io.github.apfelcreme.CommunicationKitchen.Server;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
-import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
+import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
 import java.io.*;
@@ -50,7 +50,7 @@ public class ConnectionHandler implements Runnable {
             while (!socket.isClosed()) {
                 String message = inputStream.readUTF();
                 if (message.equals("LOGIN")) {
-                    System.out.println("Login request by [" + socket.getInetAddress().getHostName() + "]");
+                    KitchenServer.getInstance().log("Login request by [" + socket.getInetAddress().getHostName() + "]");
 
                     // send ok to the connecting player
                     UUID newId = UUID.randomUUID();
@@ -58,7 +58,6 @@ public class ConnectionHandler implements Runnable {
                             newId, // player id
                             200, // new player x coordinate
                             200, // new player y coordinate
-                            Direction.DOWN, // the direction the player is facing
                             KitchenServer.getInstance().getFieldDimension().width, // field width
                             KitchenServer.getInstance().getFieldDimension().height, // field height
                             Util.serializePlayerList(KitchenServer.getInstance().getPlayers())
@@ -68,22 +67,29 @@ public class ConnectionHandler implements Runnable {
                     broadcastNewPlayerArrival(
                             newId, // player id
                             200, // new player x coordinate
-                            200, // new player y coordinate
-                            Direction.DOWN // the direction the player is facing
+                            200 // new player y coordinate
                     );
                     KitchenServer.getInstance().getPlayers().add(new Player(newId, 200, 200, Direction.DOWN));
-                    System.out.println("Login granted");
+                    KitchenServer.getInstance().log("Login granted");
+
                 } else if (message.equals("MOVE")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     Direction direction = Direction.getDirection(inputStream.readUTF());
                     Player player = KitchenServer.getInstance().getPlayer(id);
-                    System.out.println("Player Move: [" + id.toString() + "] -> " + direction.name());
+//                    KitchenServer.getInstance().log("Player Move: [" + id.toString() + "] -> " + direction.name());
                     if (player != null) {
                         player.move(direction);
                     }
 
+                } else if (message.equals("DROP")) {
+                    UUID id = UUID.fromString(inputStream.readUTF());
+                    Player player = KitchenServer.getInstance().getPlayer(id);
+                    if (player != null) {
+                        player.dropCarrying();
+                    }
+
                 } else if (message.equals("LOGOUT")) {
-                    System.out.println("Logout announced by [" + socket.getInetAddress().getHostName() + "]");
+                    KitchenServer.getInstance().log("Logout announced by [" + socket.getInetAddress().getHostName() + "]");
                     UUID id = UUID.fromString(inputStream.readUTF());
                     KitchenServer.getInstance().removePlayer(id);
                     KitchenServer.getInstance().getClientConnections().remove(this);
@@ -92,7 +98,7 @@ public class ConnectionHandler implements Runnable {
                 } else if (message.equals("CHAT")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     String chat = inputStream.readUTF();
-                    System.out.println("Chat-Message from [" + id + "]: " + chat);
+                    KitchenServer.getInstance().log("Chat-Message from [" + id + "]: " + chat);
                     broadcastChatMessage(id, chat);
                 }
             }
@@ -104,20 +110,20 @@ public class ConnectionHandler implements Runnable {
     /**
      * sends a message to a player that a player has arrived
      *
-     * @param id        the player id
-     * @param x         his x coordinate
-     * @param y         his y coordinate
-     * @param direction the direction the player is facing
+     * @param id the player id
+     * @param x  his x coordinate
+     * @param y  his y coordinate
      */
-    public static void broadcastNewPlayerArrival(UUID id, int x, int y, Direction direction) {
+    public static void broadcastNewPlayerArrival(UUID id, int x, int y) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
-                connectionHandler.getOutputStream().writeUTF("NEWPLAYER");
-                connectionHandler.getOutputStream().writeUTF(id.toString());
-                connectionHandler.getOutputStream().writeInt(x);
-                connectionHandler.getOutputStream().writeInt(y);
-                connectionHandler.getOutputStream().writeUTF(direction.name());
-                connectionHandler.getOutputStream().flush();
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("NEWPLAYER");
+                    connectionHandler.getOutputStream().writeUTF(id.toString());
+                    connectionHandler.getOutputStream().writeInt(x);
+                    connectionHandler.getOutputStream().writeInt(y);
+                    connectionHandler.getOutputStream().flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -125,20 +131,26 @@ public class ConnectionHandler implements Runnable {
     }
 
     /**
-     * sends a message to a player that a new ingredient has spawned
+     * sends a message to all clients to add a drawable at the given position
      *
-     * @param ingredient the ingredient
+     * @param id            the id
+     * @param queuePosition for ingredients: the order position
+     * @param type          the drawable type
+     * @param x             the x coordinate
+     * @param y             the y coordinate
      */
-    public static void broadcastIngredientSpawn(Ingredient ingredient) {
+    public static void broadcastAddDrawable(UUID id, Integer queuePosition, DrawableType type, int x, int y) {
         try {
-            System.out.println("Ingredient-Spawn: " + ingredient.getType() + " (" + ingredient.getX() + "," + ingredient.getY() + ")");
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
-                connectionHandler.getOutputStream().writeUTF("INGREDIENTSPAWN");
-                connectionHandler.getOutputStream().writeUTF(ingredient.getId().toString());
-                connectionHandler.getOutputStream().writeUTF(ingredient.getType().name());
-                connectionHandler.getOutputStream().writeInt(ingredient.getX());
-                connectionHandler.getOutputStream().writeInt(ingredient.getY());
-                connectionHandler.getOutputStream().flush();
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("ADDDRAWABLE");
+                    connectionHandler.getOutputStream().writeUTF(id.toString());
+                    connectionHandler.getOutputStream().writeInt(queuePosition);
+                    connectionHandler.getOutputStream().writeUTF(type.name());
+                    connectionHandler.getOutputStream().writeInt(x);
+                    connectionHandler.getOutputStream().writeInt(y);
+                    connectionHandler.getOutputStream().flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -146,37 +158,102 @@ public class ConnectionHandler implements Runnable {
     }
 
     /**
-     * sends a message to a player that an ingredient has despawned
+     * sends a message to all clients to remove a drawable at the given position
      *
-     * @param ingredient the ingredient
+     * @param id the id
      */
-    public static void broadcastIngredientDespawn(Ingredient ingredient) {
+    public static void broadcastRemoveDrawable(UUID id) {
         try {
-            System.out.println("Ingredient-Despawn: " + ingredient.getType() + " (" + ingredient.getX() + "," + ingredient.getY() + ")");
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
-                connectionHandler.getOutputStream().writeUTF("INGREDIENTDESPAWN");
-                connectionHandler.getOutputStream().writeUTF(ingredient.getId().toString());
-                connectionHandler.getOutputStream().flush();
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("REMOVEDRAWABLE");
+                    connectionHandler.getOutputStream().writeUTF(id.toString());
+                    connectionHandler.getOutputStream().flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
+
     /**
-     * sends a message to a player that a pot has spawned
+     * broadcasts to all clients that a player has picked up an ingredient
      *
-     * @param pot  - the pot
+     * @param id           the player
+     * @param drawableType the ingredient
      */
-    public static void broadcastPotSpawn(Pot pot) {
+    public static void broadcastAdditionToHand(UUID id, DrawableType drawableType) {
         try {
-            System.out.println("Pot-Spawn (" + pot.getX() + "," + pot.getY() + ")");
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
-                connectionHandler.getOutputStream().writeUTF("POTSPAWN");
-                connectionHandler.getOutputStream().writeUTF(pot.getId().toString());                
-                connectionHandler.getOutputStream().writeInt(pot.getX());
-                connectionHandler.getOutputStream().writeInt(pot.getY());
-                connectionHandler.getOutputStream().flush();
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("ADDTOHAND");
+                    connectionHandler.getOutputStream().writeUTF(id.toString());
+                    connectionHandler.getOutputStream().writeUTF(drawableType.name());
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * broadcasts a message that an ingredient was removed from a players hand
+     *
+     * @param id the player
+     */
+    public static void broadcastRemovalFromHand(UUID id) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("REMOVEFROMHAND");
+                    connectionHandler.getOutputStream().writeUTF(id.toString());
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * broadcasts a message that a new order was created
+     *
+     * @param order the order
+     */
+    public static void broadcastNewOrder(Order order) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("ADDORDER");
+                    connectionHandler.getOutputStream().writeUTF(order.getId().toString());
+                    connectionHandler.getOutputStream().writeLong(order.getTime());
+                    String ingredients = "";
+                    for (Ingredient ingredient : order.getIngredients(Ingredient.Status.MISSING)) {
+                        ingredients += ingredient.getId() + ",";
+                    }
+                    connectionHandler.getOutputStream().writeUTF(ingredients);
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * broadcasts a message that a new order was created
+     *
+     * @param order the order
+     */
+    public static void broadcastRemoveOrder(Order order) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("REMOVEORDER");
+                    connectionHandler.getOutputStream().writeUTF(order.getId().toString());
+                    connectionHandler.getOutputStream().flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -186,20 +263,18 @@ public class ConnectionHandler implements Runnable {
     /**
      * broadcasts a players new position to all clients after he moved
      *
-     * @param id        the players id
-     * @param x         the new x coordinate
-     * @param y         the new y coordinate
-     * @param direction the direction the player is facing
+     * @param player the player
      */
-    public static void broadcastPlayerMove(UUID id, int x, int y, Direction direction) {
+    public static void broadcastPlayerMove(Player player) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
-                connectionHandler.getOutputStream().writeUTF("MOVE");
-                connectionHandler.getOutputStream().writeUTF(id.toString());
-                connectionHandler.getOutputStream().writeInt(x);
-                connectionHandler.getOutputStream().writeInt(y);
-                connectionHandler.getOutputStream().writeUTF(direction.name());
-                connectionHandler.getOutputStream().flush();
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("MOVE");
+                    connectionHandler.getOutputStream().writeUTF(player.getId().toString());
+                    connectionHandler.getOutputStream().writeInt(player.getX());
+                    connectionHandler.getOutputStream().writeInt(player.getY());
+                    connectionHandler.getOutputStream().flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -208,16 +283,19 @@ public class ConnectionHandler implements Runnable {
 
     /**
      * broadcasts a message to all players
-     * @param id the sending player id
+     *
+     * @param id   the sending player id
      * @param chat the chat message
      */
     public static void broadcastChatMessage(UUID id, String chat) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
-                connectionHandler.getOutputStream().writeUTF("CHAT");
-                connectionHandler.getOutputStream().writeUTF(id.toString());
-                connectionHandler.getOutputStream().writeUTF(chat);
-                connectionHandler.getOutputStream().flush();
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("CHAT");
+                    connectionHandler.getOutputStream().writeUTF(id.toString());
+                    connectionHandler.getOutputStream().writeUTF(chat);
+                    connectionHandler.getOutputStream().flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -230,37 +308,23 @@ public class ConnectionHandler implements Runnable {
      * @param id                   the id the new player is given
      * @param x                    the x coordinate he spawns on
      * @param y                    the y coordinate he spawns on
-     * @param direction            the direction the player is facing
      * @param width                the width of the playing field
      * @param height               the height of the playing field
      * @param serializedPlayerList a serialized list of all players that are currently logged in
      */
-    private void sendLoginConfirmation(UUID id, int x, int y, Direction direction, int width, int height,
+    private void sendLoginConfirmation(UUID id, int x, int y, int width, int height,
                                        String serializedPlayerList) {
         try {
-            outputStream.writeUTF("LOGINOK");
-            outputStream.writeUTF(id.toString());
-            outputStream.writeInt(x);
-            outputStream.writeInt(y);
-            outputStream.writeUTF(direction.name());
-            outputStream.writeInt(width);
-            outputStream.writeInt(height);
-            outputStream.writeUTF(serializedPlayerList);
-            outputStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * sends a signle command to the client
-     *
-     * @param message a command
-     */
-    public void send(String message) {
-        try {
-            outputStream.writeUTF(message);
-            outputStream.flush();
+            synchronized (outputStream) {
+                outputStream.writeUTF("LOGINOK");
+                outputStream.writeUTF(id.toString());
+                outputStream.writeInt(x);
+                outputStream.writeInt(y);
+                outputStream.writeInt(width);
+                outputStream.writeInt(height);
+                outputStream.writeUTF(serializedPlayerList);
+                outputStream.flush();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -270,6 +334,7 @@ public class ConnectionHandler implements Runnable {
      * returns the output stream
      *
      * @return the output stream
+     * -    private DrawablePot drawablePot = null;
      */
     public ObjectOutputStream getOutputStream() {
         return outputStream;
@@ -284,4 +349,5 @@ public class ConnectionHandler implements Runnable {
     public ObjectInputStream getInputStream() {
         return inputStream;
     }
+
 }

@@ -36,14 +36,12 @@ public class Util {
      */
     public static List<DrawablePlayer> deserializePlayerList(String s) {
         List<DrawablePlayer> drawablePlayers = new ArrayList<DrawablePlayer>();
-        if (!s.isEmpty()) {
-            System.out.println(s);
+        if (!s.equals("")) {
             for (String player : s.split(Pattern.quote("|"))) {
                 drawablePlayers.add(new DrawablePlayer(
                         UUID.fromString(player.split(",")[0]),
                         Integer.valueOf(player.split(",")[1]),
-                        Integer.valueOf(player.split(",")[2]),
-                        Direction.getDirection(player.split(",")[3])
+                        Integer.valueOf(player.split(",")[2])
                 ));
             }
         }
@@ -59,12 +57,23 @@ public class Util {
     public static String serializePlayerList(List<Player> players) {
         String ret = "";
         for (Player player : players) {
-            ret = ret + player.getId() + "," + player.getX() + "," + player.getY() + "," + player.getDirection() + "|";
+            ret += player.getId() + "," + player.getX() + "," + player.getY() + "|";
         }
         return ret;
     }
-    
+
+    /**
+     * checks if the positions of objects are ~ equal
+     *
+     * @param x1        x of object 1
+     * @param y1        y of object 1
+     * @param x2        x of object 2
+     * @param y2        y of object 2
+     * @param tolerance the distance that is allowed between both
+     * @return true or false
+     */
     public static boolean arePositionsEqual(int x1, int y1, int x2, int y2, int tolerance) {
-    	return x1 < x2 + tolerance && x1 > x2 - tolerance  && y1 < y2 + tolerance && y1 > y2 - tolerance;
+        return x1 < x2 + tolerance && x1 > x2 - tolerance && y1 < y2 + tolerance && y1 > y2 - tolerance;
     }
+
 }

@@ -1,9 +1,10 @@
 package io.github.apfelcreme.CommunicationKitchen.Server;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
+import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
+import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -23,17 +24,113 @@ import java.util.TimerTask;
  *
  * @author Lord36 aka Apfelcreme
  */
-public class Order extends TimerTask{
+public class Order extends TimerTask {
 
-    private Ingredient ingredient1;
-    private Ingredient ingredient2;
-    private Ingredient ingredient3;
+    private UUID id;
+    private ArrayList<Ingredient> ingredients;
+    private long time;
+    private Pot pot;
 
-    public Order(Ingredient ingredient1, Ingredient ingredient2, Ingredient ingredient3) {
-        this.ingredient1 = ingredient1;
-        this.ingredient2 = ingredient2;
-        this.ingredient3 = ingredient3;
-        new Timer().schedule(this, 15000);
+    public Order(UUID id, int amount, long time) {
+        this.id = id;
+        this.time = time;
+        this.ingredients = new ArrayList<Ingredient>();
+
+        // spawn n ingredients
+        for (int i = 0; i < amount; i++) {
+            Ingredient ingredient = new Ingredient(
+                    UUID.randomUUID(),
+                    i,
+                    Ingredient.Type.random(),
+                    40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().width - 60),
+                    40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().height - 60));
+            ingredients.add(ingredient);
+        }
+        new Timer().schedule(this, time);
+    }
+
+    /**
+     * removes the order
+     */
+    public void remove() {
+        // remove all ingredients from this order that are currently held by players
+        for (Player player : KitchenServer.getInstance().getPlayers()) {
+            for (Ingredient ingredient : ingredients) {
+                if (ingredient.getStatus() == Ingredient.Status.IS_BEING_CARRIED) {
+                    if (ingredient.equals(player.getCarrying())) {
+                        player.setCarrying(null);
+                        ConnectionHandler.broadcastRemovalFromHand(player.getId());
+                    }
+                }
+            }
+        }
+
+        for (Ingredient ingredient : ingredients) {
+            ConnectionHandler.broadcastRemoveDrawable(ingredient.getId());
+        }
+
+        ConnectionHandler.broadcastRemoveDrawable(pot.getId());
+        ConnectionHandler.broadcastRemoveOrder(this);
+
+        ingredients.clear();
+    }
+
+    /**
+     * returns the order id
+     *
+     * @return the order id
+     */
+    public UUID getId() {
+        return id;
+    }
+
+    /**
+     * the list of ingredients
+     *
+     * @return the list of ingredients
+     */
+    public List<Ingredient> getIngredients() {
+        return ingredients;
+    }
+
+    /**
+     * returns all ingredients with a given status
+     * @param status the status
+     * @return all ingredients with the given status
+     */
+    public List<Ingredient> getIngredients(Ingredient.Status status) {
+        List<Ingredient> ret = new ArrayList<Ingredient>();
+        for (Ingredient ingredient : ingredients) {
+            if (ingredient.getStatus() == status) {
+                ret.add(ingredient);
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * returns the amount of time the players have to complete the orders
+     *
+     * @return the amount of time in ms
+     */
+    public long getTime() {
+        return time;
+    }
+
+    /**
+     * @return the pot
+     */
+    public Pot getPot() {
+        return pot;
+    }
+
+    /**
+     * sets the pot
+     *
+     * @param pot the pot
+     */
+    public void setPot(Pot pot) {
+        this.pot = pot;
     }
 
     /**
@@ -41,8 +138,7 @@ public class Order extends TimerTask{
      */
     @Override
     public void run() {
-        ConnectionHandler.broadcastIngredientDespawn(ingredient1);
-        ConnectionHandler.broadcastIngredientDespawn(ingredient2);
-        ConnectionHandler.broadcastIngredientDespawn(ingredient3);
+        KitchenServer.getInstance().log("Auftrag fehlgeschlagen");
+        remove();
     }
 }

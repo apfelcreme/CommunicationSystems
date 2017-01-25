@@ -1,13 +1,14 @@
-package io.github.apfelcreme.CommunicationKitchen.Client;
+package io.github.apfelcreme.CommunicationKitchen.Client.UI;
 
-import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawableIngredient;
-import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePlayer;
+import io.github.apfelcreme.CommunicationKitchen.Client.CommunicationKitchen;
+import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.Drawable;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.TimerTask;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -40,6 +41,12 @@ public class DrawingBoard extends JPanel {
 
     private DrawingBoard() {
         this.setSize(CommunicationKitchen.WIDTH, CommunicationKitchen.HEIGHT);
+        new java.util.Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                repaint();
+            }
+        }, 0, 100);
     }
 
     /**
@@ -61,21 +68,14 @@ public class DrawingBoard extends JPanel {
             }
             // end floor
 
-            // players
-            for (DrawablePlayer drawablePlayer : CommunicationKitchen.getInstance().getDrawablePlayers()) {
-                drawablePlayer.draw(g);
+            // drawables
+            synchronized (CommunicationKitchen.getInstance().getDrawables()) {
+                for (Drawable drawable : CommunicationKitchen.getInstance().getDrawables()) {
+                    drawable.draw(g);
+                }
             }
-            // end players
+            // end drawables
 
-            // ingredients
-            for (DrawableIngredient drawableIngredient : CommunicationKitchen.getInstance().getDrawableIngredients()) {
-                drawableIngredient.draw(g);
-            }
-            // end ingredients
-            
-            // pot
-            CommunicationKitchen.getInstance().getDrawablePot().draw(g);
-            
         } catch (IOException e) {
             e.printStackTrace();
         }
