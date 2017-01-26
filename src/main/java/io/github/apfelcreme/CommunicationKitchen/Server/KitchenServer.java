@@ -41,7 +41,7 @@ public class KitchenServer extends JFrame implements Runnable {
     private static KitchenServer instance = null;
 
     private ServerSocket serverSocket = null;
-    private Dimension fieldDimension = new Dimension(500, 400);
+    private Dimension fieldDimension = new Dimension(460, 380);
 
     private List<ConnectionHandler> clientConnections = new ArrayList<ConnectionHandler>();
 

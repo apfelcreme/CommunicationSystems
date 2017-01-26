@@ -303,6 +303,22 @@ public class ConnectionHandler implements Runnable {
     }
 
     /**
+     * forces all clients to draw a damage image
+     */
+    public static void broadcastDamage() {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("DAMAGE");
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * sends a login confirmation
      *
      * @param id                   the id the new player is given

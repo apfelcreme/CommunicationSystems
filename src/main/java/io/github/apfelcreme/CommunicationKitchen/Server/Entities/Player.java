@@ -111,6 +111,7 @@ public class Player {
                             order.cancel();
                             KitchenServer.getInstance().log("Die Bestellung" + order.getId()
                                     + " ist fehlgeschlagen!");
+                            ConnectionHandler.broadcastDamage();
                             orderCancelled = true;
                         }
                     }

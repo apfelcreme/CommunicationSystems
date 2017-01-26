@@ -253,6 +253,10 @@ public class ServerConnector implements Runnable {
                 } else if (message.equals("REMOVEORDER")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     CommunicationKitchen.getInstance().removeOrder(id);
+
+
+                } else if (message.equals("DAMAGE")) {
+                    DrawingBoard.getInstance().setDrawDamageOnNextTick(true);
                 }
 
             }

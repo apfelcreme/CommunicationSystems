@@ -32,6 +32,10 @@ public class DrawingBoard extends JPanel {
 
     private static DrawingBoard instance = null;
 
+    private boolean drawDamageOnNextTick = false;
+    private BufferedImage damageImage;
+    private BufferedImage floorImage;
+
     public static DrawingBoard getInstance() {
         if (instance == null) {
             instance = new DrawingBoard();
@@ -47,6 +51,12 @@ public class DrawingBoard extends JPanel {
                 repaint();
             }
         }, 0, 100);
+        try {
+            damageImage = ImageIO.read(this.getClass().getResourceAsStream("/damage.png"));
+            floorImage = ImageIO.read(this.getClass().getResourceAsStream("/floortile_small.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -56,29 +66,47 @@ public class DrawingBoard extends JPanel {
      */
     @Override
     protected void paintComponent(Graphics g) {
-        try {
-            super.paintComponent(g);
+        super.paintComponent(g);
 
-            // floor
-            BufferedImage image = ImageIO.read(this.getClass().getResourceAsStream("/floortile_small.png"));
-            for (int x = 0; x < getSize().width; x += image.getWidth()) {
-                for (int y = 0; y < getSize().height; y += image.getHeight()) {
-                    g.drawImage(image, x, y, this);
-                }
+        // floor
+        for (int x = 0; x < getSize().width; x += floorImage.getWidth()) {
+            for (int y = 0; y < getSize().height; y += floorImage.getHeight()) {
+                g.drawImage(floorImage, x, y, this);
             }
-            // end floor
-
-            // drawables
-            synchronized (CommunicationKitchen.getInstance().getDrawables()) {
-                for (Drawable drawable : CommunicationKitchen.getInstance().getDrawables()) {
-                    drawable.draw(g);
-                }
-            }
-            // end drawables
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+        // end floor
+
+        // drawables
+        synchronized (CommunicationKitchen.getInstance().getDrawables()) {
+            for (Drawable drawable : CommunicationKitchen.getInstance().getDrawables()) {
+                drawable.draw(g);
+            }
+        }
+        // end drawables
+
+        if (drawDamageOnNextTick) {
+            g.drawImage(damageImage, 0, 0, null);
+//            drawDamageOnNextTick = false;
+        }
+
     }
 
+    /**
+     * make the drawing board draw the damage frame on the next tick
+     *
+     * @param drawDamageOnNextTick true or false
+     */
+    public void setDrawDamageOnNextTick(final boolean drawDamageOnNextTick) {
+        this.drawDamageOnNextTick = drawDamageOnNextTick;
+        new java.util.Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                setDrawDamage(false);
+            }
+        }, 200);
+    }
+
+    private void setDrawDamage(boolean drawDamage) {
+        this.drawDamageOnNextTick = drawDamage;
+    }
 }
