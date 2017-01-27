@@ -20,10 +20,14 @@ package io.github.apfelcreme.CommunicationKitchen.Util;
  */
 public enum Direction {
 
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN;
+    NORTH,
+    NORTH_WEST,
+    WEST,
+    SOUTH_WEST,
+    SOUTH,
+    SOUTH_EAST,
+    EAST,
+    NORTH_EAST;
 
     public static Direction getDirection(String key) {
         for (Direction direction : values()) {
@@ -31,6 +35,6 @@ public enum Direction {
                 return direction;
             }
         }
-        return LEFT;
+        return SOUTH;
     }
 }

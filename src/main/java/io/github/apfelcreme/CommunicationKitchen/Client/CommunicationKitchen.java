@@ -57,6 +57,8 @@ public class CommunicationKitchen extends JFrame {
 
     private Vector<DrawableOrder> orders = new Vector<DrawableOrder>();
 
+    private Set<Integer> keysPressed;
+
     private UUID me = null;
     private static CommunicationKitchen instance = null;
 
@@ -181,48 +183,8 @@ public class CommunicationKitchen extends JFrame {
 
 
         //Key Inputs
-        InputMap inputMap = DrawingBoard.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        inputMap.put(KeyStroke.getKeyStroke('w'), "w");
-        inputMap.put(KeyStroke.getKeyStroke('a'), "a");
-        inputMap.put(KeyStroke.getKeyStroke('s'), "s");
-        inputMap.put(KeyStroke.getKeyStroke('d'), "d");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "enter");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "space");
-        ActionMap actionMap = DrawingBoard.getInstance().getActionMap();
-        actionMap.put("w", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                ServerConnector.getInstance().sendPlayerMove(me, Direction.UP);
-            }
-        });
-        actionMap.put("a", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                ServerConnector.getInstance().sendPlayerMove(me, Direction.LEFT);
-            }
-        });
-        actionMap.put("s", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                ServerConnector.getInstance().sendPlayerMove(me, Direction.DOWN);
-            }
-        });
-        actionMap.put("d", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                ServerConnector.getInstance().sendPlayerMove(me, Direction.RIGHT);
-            }
-        });
-        actionMap.put("space", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                ServerConnector.getInstance().sendItemDrop(me);
-            }
-        });
-        actionMap.put("enter", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                ServerConnector.getInstance().sendChatMessage(me, chat.getText());
-                chat.setText("");
-                DrawingBoard.getInstance().requestFocus();
-            }
-        });
+        initKeys();
 
-        //End Key Inputs
 
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -353,6 +315,129 @@ public class CommunicationKitchen extends JFrame {
     }
 
     /**
+    /**
+     * initializes all key events
+     */
+    public void initKeys() {
+        keysPressed = new HashSet<Integer>();
+
+        InputMap inputMap = DrawingBoard.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0, false), "w_pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0, true), "w_released");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0, false), "a_pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0, true), "a_released");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "s_pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "s_released");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "d_pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "d_released");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false), "enter_pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enter_released");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, false), "space_pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, true), "space_released");
+        ActionMap actionMap = DrawingBoard.getInstance().getActionMap();
+        actionMap.put("w_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_W);
+                execute();
+            }
+        });
+        actionMap.put("w_released", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.remove(KeyEvent.VK_W);
+                execute();
+            }
+        });
+        actionMap.put("a_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_A);
+                execute();
+            }
+        });
+        actionMap.put("a_released", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.remove(KeyEvent.VK_A);
+                execute();
+            }
+        });
+        actionMap.put("s_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_S);
+                execute();
+            }
+        });
+        actionMap.put("s_released", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.remove(KeyEvent.VK_S);
+                execute();
+            }
+        });
+        actionMap.put("d_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_D);
+                execute();
+            }
+        });
+        actionMap.put("d_released", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.remove(KeyEvent.VK_D);
+                execute();
+            }
+        });
+        actionMap.put("enter_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_ENTER);
+                execute();
+            }
+        });
+        actionMap.put("enter_released", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.remove(KeyEvent.VK_ENTER);
+                execute();
+            }
+        });
+        actionMap.put("space_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_SPACE);
+                execute();
+            }
+        });
+        actionMap.put("space_released", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.remove(KeyEvent.VK_SPACE);
+                execute();
+            }
+        });
+    }
+
+    /**
+     * executes key events
+     */
+    private void execute() {
+        if (!keysPressed.isEmpty()) {
+            if (keysPressed.contains(KeyEvent.VK_W)) {
+                if (keysPressed.contains(KeyEvent.VK_A)) {
+                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.NORTH_WEST);
+                } else if (keysPressed.contains(KeyEvent.VK_D)) {
+                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.NORTH_EAST);
+                } else {
+                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.NORTH);
+                }
+            } else if (keysPressed.contains(KeyEvent.VK_S)) {
+                if (keysPressed.contains(KeyEvent.VK_A)) {
+                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.SOUTH_WEST);
+                } else if (keysPressed.contains(KeyEvent.VK_D)) {
+                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.SOUTH_EAST);
+                } else {
+                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.SOUTH);
+                }
+            } else if (keysPressed.contains(KeyEvent.VK_A)) {
+                ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.WEST);
+            } else if (keysPressed.contains(KeyEvent.VK_D)) {
+                ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.EAST);
+            }
+        }
+    }
+
      * returns the client instance
      *
      * @return the client instance

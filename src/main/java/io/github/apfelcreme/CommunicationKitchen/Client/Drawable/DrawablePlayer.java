@@ -37,7 +37,7 @@ public class DrawablePlayer extends Drawable {
     public DrawablePlayer(UUID id, int x, int y) {
         super(id, 0, DrawableType.PLAYER, x, y);
         this.chat = "";
-        this.direction = Direction.DOWN;
+        this.direction = Direction.SOUTH;
         carrying = DrawableType.NOTHING;
         calcImage();
     }
@@ -49,19 +49,23 @@ public class DrawablePlayer extends Drawable {
     private void calcImage() {
         try {
             switch (direction) {
-                case DOWN:
+                case SOUTH:
+                case SOUTH_EAST:
+                case SOUTH_WEST:
                     image = ImageIO.read(DrawablePlayer.class.getResourceAsStream("/Drawables/PLAYER.png"))
                             .getSubimage(0, 0, 40, 40);
                     break;
-                case LEFT:
+                case WEST:
                     image = ImageIO.read(DrawablePlayer.class.getResourceAsStream("/Drawables/PLAYER.png"))
                             .getSubimage(0, 40, 40, 40);
                     break;
-                case RIGHT:
+                case EAST:
                     image = ImageIO.read(DrawablePlayer.class.getResourceAsStream("/Drawables/PLAYER.png"))
                             .getSubimage(0, 80, 40, 40);
                     break;
-                case UP:
+                case NORTH:
+                case NORTH_EAST:
+                case NORTH_WEST:
                     image = ImageIO.read(DrawablePlayer.class.getResourceAsStream("/Drawables/PLAYER.png"))
                             .getSubimage(0, 120, 40, 40);
                     break;
@@ -106,9 +110,9 @@ public class DrawablePlayer extends Drawable {
     @Override
     public void setX(int x) {
         if (x > this.getX()) {
-            direction = Direction.RIGHT;
+            direction = Direction.EAST;
         } else if (x < this.getX()) {
-            direction = Direction.LEFT;
+            direction = Direction.WEST;
         }
         super.setX(x);
     }
@@ -121,9 +125,9 @@ public class DrawablePlayer extends Drawable {
     @Override
     public void setY(int y) {
         if (y > this.getY()) {
-            direction = Direction.DOWN;
+            direction = Direction.SOUTH;
         } else if (y < this.getY()) {
-            direction = Direction.UP;
+            direction = Direction.NORTH;
         }
         super.setY(y);
     }

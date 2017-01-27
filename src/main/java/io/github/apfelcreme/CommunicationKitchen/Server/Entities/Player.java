@@ -45,35 +45,80 @@ public class Player {
     }
 
     public void move(Direction direction) {
+        int maxX = KitchenServer.getInstance().getFieldDimension().width;
+        int maxY = KitchenServer.getInstance().getFieldDimension().height;
         switch (direction) {
-
-            case LEFT:
-                x = x - 10;
-                if (x < 0) {
-                    x = 0;
-                }
-                setDirection(Direction.LEFT);
-                break;
-            case RIGHT:
-                x = x + 10;
-                if (x > KitchenServer.getInstance().getFieldDimension().width - 40) {
-                    x = KitchenServer.getInstance().getFieldDimension().width - 40;
-                }
-                setDirection(Direction.RIGHT);
-                break;
-            case UP:
+            case NORTH:
                 y = y - 10;
                 if (y < 0) {
                     y = 0;
                 }
-                setDirection(Direction.UP);
+                setDirection(direction);
                 break;
-            case DOWN:
-                y = y + 10;
-                if (y > (KitchenServer.getInstance().getFieldDimension().height - 40)) {
-                    y = KitchenServer.getInstance().getFieldDimension().height - 40;
+            case NORTH_WEST:
+                x = x - 7;
+                y = y - 7;
+                if (x < 0) {
+                    x = 0;
                 }
-                setDirection(Direction.DOWN);
+                if (y < 0) {
+                    y = 0;
+                }
+                setDirection(direction);
+                break;
+            case WEST:
+                x = x - 10;
+                if (x < 0) {
+                    x = 0;
+                }
+                setDirection(direction);
+                break;
+            case SOUTH_WEST:
+                x = x - 7;
+                y = y + 7;
+                if (x < 0) {
+                    x = 0;
+                }
+                if (y > maxY) {
+                    y = maxY;
+                }
+                setDirection(direction);
+                break;
+            case SOUTH:
+                y = y + 10;
+                if (y > maxY) {
+                    y = maxY;
+                }
+                setDirection(direction);
+                break;
+            case SOUTH_EAST:
+                x = x + 7;
+                y = y + 7;
+                if (x > maxX) {
+                    x = maxX;
+                }
+                if (y > maxY) {
+                    y = maxY;
+                }
+                setDirection(direction);
+                break;
+            case EAST:
+                x = x + 10;
+                if (x > maxX) {
+                    x = maxX;
+                }
+                setDirection(direction);
+                break;
+            case NORTH_EAST:
+                x = x + 7;
+                y = y - 7;
+                if (x > maxX) {
+                    x = maxX;
+                }
+                if (y < 0) {
+                    y = 0;
+                }
+                setDirection(direction);
                 break;
         }
 
@@ -140,32 +185,72 @@ public class Player {
      */
     public void dropCarrying() {
         if (carrying != null) {
-            for (Order order : KitchenServer.getInstance().getOrders()) {
+            for (Order order : KitchenServer.getInstance().getGame().getOrders()) {
                 for (Ingredient ingredient : order.getIngredients()) {
                     if (ingredient.equals(carrying)) {
                         // to which direction shall the ingredient be thrown to?
                         switch (direction) {
-                            case LEFT:
-                                ingredient.setX(ingredient.getX() - 40);
+
+//                            case NORTH:
+//                                ingredient.setX(ingredient.getX() - 40);
+//                                ingredient.setY(y);
+//                                break;
+//                            case NORTH_:
+//                                ingredient.setX(ingredient.getX() - 40);
+//                                ingredient.setY(y);
+//                                break;
+//                            case RIGHT:
+//                                ingredient.setX(ingredient.getX() + 40);
+//                                ingredient.setY(y);
+//                                break;
+//                            case UP:
+//                                ingredient.setY(ingredient.getY() - 40);
+//                                ingredient.setX(x);
+//                                break;
+//                            case DOWN:
+//                                ingredient.setY(ingredient.getY() + 40);
+//                                ingredient.setX(x);
+//                                break;
+                            case NORTH:
+                                ingredient.setX(x);
+                                ingredient.setY(y - 40);
+                                break;
+                            case NORTH_WEST:
+                                ingredient.setX(x - 40);
+                                ingredient.setY(y - 40);
+                                break;
+                            case WEST:
+                                ingredient.setX(x - 40);
                                 ingredient.setY(y);
                                 break;
-                            case RIGHT:
-                                ingredient.setX(ingredient.getX() + 40);
+                            case SOUTH_WEST:
+                                ingredient.setX(x - 40);
+                                ingredient.setY(y + 40);
+                                break;
+                            case SOUTH:
+                                ingredient.setX(x);
+                                ingredient.setY(y + 40);
+                                break;
+                            case SOUTH_EAST:
+                                ingredient.setX(x + 40);
+                                ingredient.setY(y + 40);
+                                break;
+                            case EAST:
+                                ingredient.setX(x + 40);
                                 ingredient.setY(y);
                                 break;
-                            case UP:
-                                ingredient.setY(ingredient.getY() - 40);
-                                ingredient.setX(x);
-                                break;
-                            case DOWN:
-                                ingredient.setY(ingredient.getY() + 40);
-                                ingredient.setX(x);
+                            case NORTH_EAST:
+                                ingredient.setX(x + 40);
+                                ingredient.setY(y - 40);
                                 break;
                         }
                         ingredient.setStatus(Ingredient.Status.MISSING);
                         ConnectionHandler.broadcastRemovalFromHand(id);
-                        ConnectionHandler.broadcastAddDrawable(ingredient.getId(), ingredient.getQueuePos() + 1,
-                                ingredient.getType().getDrawableType(), ingredient.getX(), ingredient.getY());
+                        ConnectionHandler.broadcastAddDrawable(ingredient.getId(),
+                                ingredient.getQueuePos(),
+                                ingredient.getType().getDrawableType(),
+                                ingredient.getX(),
+                                ingredient.getY());
                         this.carrying = null;
                         KitchenServer.getInstance().log("Player " + id + " dropped his item");
                     }
