@@ -6,7 +6,6 @@ import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePlayer;
 import io.github.apfelcreme.CommunicationKitchen.Client.UI.BorderPanel;
 import io.github.apfelcreme.CommunicationKitchen.Client.UI.DrawingBoard;
 import io.github.apfelcreme.CommunicationKitchen.Client.UI.OrderBoard;
-import io.github.apfelcreme.CommunicationKitchen.Server.Order;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 
 import javax.imageio.ImageIO;
@@ -15,7 +14,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.util.*;
-import java.util.List;
+import java.util.Timer;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -38,6 +37,8 @@ import java.util.List;
 
 /**
  * food-sprites: https://ccrgeek.wordpress.com/rpg-maker-ace/graphics/character-sprites/
+ * alarm-clock: http://downloadicons.net/android-powered-alarm-clock-icon-74359
+ * order-symbol: http://www.flaticon.com/free-icon/medical-notes-symbol-of-a-list-paper-on-a-clipboard_45945
  */
 
     /*
@@ -297,6 +298,7 @@ public class CommunicationKitchen extends JFrame {
         }
         return null;
     }
+
     /**
      * removes an ingredient from the list of drawables
      *
@@ -335,6 +337,20 @@ public class CommunicationKitchen extends JFrame {
     }
 
     /**
+     * returns the drawable order with the given id
+     *
+     * @param id the order id
+     * @return the order with the given id
+     */
+    public DrawableOrder getDrawableOrder(UUID id) {
+        for (DrawableOrder drawableOrder : orders) {
+            if (drawableOrder.getId().equals(id)) {
+                return drawableOrder;
+            }
+        }
+        return null;
+    }
+
     /**
      * initializes all key events
      */
@@ -458,6 +474,7 @@ public class CommunicationKitchen extends JFrame {
         }
     }
 
+    /**
      * returns the client instance
      *
      * @return the client instance

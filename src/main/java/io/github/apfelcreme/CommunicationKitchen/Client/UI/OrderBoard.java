@@ -56,20 +56,32 @@ public class OrderBoard extends JLabel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         int o = 0;
-        synchronized (CommunicationKitchen.getInstance().getOrders()) {
-            for (DrawableOrder order : CommunicationKitchen.getInstance().getOrders()) {
-                int i = 0;
-                for (Drawable drawable : order.getIngredients()) {
-                    g.drawImage(drawable.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH), i, o, null);
-                    g.drawString(Integer.toString(drawable.getQueuePos()), i + 10, o + 25);
-                    i += 25;
+        try {
+            synchronized (CommunicationKitchen.getInstance().getOrders()) {
+                for (DrawableOrder order : CommunicationKitchen.getInstance().getOrders()) {
+                    int i = 25;
+                    BufferedImage typeImage = null;
+                    if (order.getType().equals("QUEUEORDER")) {
+                        typeImage = ImageIO.read(OrderBoard.class.getResourceAsStream("/checklist.png"));
+                    } else if (order.getType().equals("TIMEORDER")) {
+                        typeImage = ImageIO.read(OrderBoard.class.getResourceAsStream("/clock.png"));
+                    }
+                    if (typeImage != null) {
+                        g.drawImage(typeImage, 7, o + 7, null);
+                    }
+                    for (Drawable drawable : order.getIngredients()) {
+                        g.drawImage(drawable.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH), i, o, null);
+                        g.drawString(Integer.toString(drawable.getQueuePos()), i + 10, o + 25);
+                        i += 25;
+                    }
+                    g.setColor(Color.BLACK);
+                    g.drawString(new SimpleDateFormat("ss").format(new Date(order.getTimeCreated() + order.getTimeLimit() - System.currentTimeMillis())), i + 10, o + 17);
+                    o += 27;
                 }
-                g.setColor(Color.BLACK);
-                g.drawString(new SimpleDateFormat("ss").format(new Date(order.getTimeCreated() + order.getTimeLimit() - System.currentTimeMillis())), i + 10, o + 17);
-                o += 27;
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
     }
 
     /**

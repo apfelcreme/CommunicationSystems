@@ -2,6 +2,9 @@ package io.github.apfelcreme.CommunicationKitchen.Server;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.Order;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.QueueOrder;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.TimeOrder;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
@@ -69,7 +72,7 @@ public class ConnectionHandler implements Runnable {
                             200, // new player x coordinate
                             200 // new player y coordinate
                     );
-                    KitchenServer.getInstance().getPlayers().add(new Player(newId, 200, 200, Direction.DOWN));
+                    KitchenServer.getInstance().addPlayer(new Player(newId, 200, 200, Direction.SOUTH));
                     KitchenServer.getInstance().log("Login granted");
 
                 } else if (message.equals("MOVE")) {
@@ -143,7 +146,7 @@ public class ConnectionHandler implements Runnable {
      * sends a message to all clients to add a drawable at the given position
      *
      * @param id            the id
-     * @param queuePosition for ingredients: the order position
+     * @param queuePosition for ingredients: the order position   | -1 = pot, -2 = clock symbol
      * @param type          the drawable type
      * @param x             the x coordinate
      * @param y             the y coordinate
@@ -236,6 +239,7 @@ public class ConnectionHandler implements Runnable {
                 synchronized (connectionHandler.getOutputStream()) {
                     connectionHandler.getOutputStream().writeUTF("ADDORDER");
                     connectionHandler.getOutputStream().writeUTF(order.getId().toString());
+                    connectionHandler.getOutputStream().writeUTF(order instanceof QueueOrder ? "QUEUEORDER" : "TIMEORDER");
                     connectionHandler.getOutputStream().writeLong(order.getTime());
                     String ingredients = "";
                     for (Ingredient ingredient : order.getIngredients(Ingredient.Status.MISSING)) {
@@ -268,6 +272,28 @@ public class ConnectionHandler implements Runnable {
             e.printStackTrace();
         }
     }
+
+
+    /**
+     * broadcasts a message that a countdown for a time order has begun
+     *
+     * @param timeOrder the order
+     */
+    public static void broadcastTimerStart(TimeOrder timeOrder) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("TIMEORDERSTART");
+                    connectionHandler.getOutputStream().writeUTF(timeOrder.getId().toString());
+                    connectionHandler.getOutputStream().writeLong(timeOrder.getTimeFrame());
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * broadcasts a players new position to all clients after he moved

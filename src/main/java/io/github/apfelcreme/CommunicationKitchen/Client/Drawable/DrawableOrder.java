@@ -1,9 +1,9 @@
 package io.github.apfelcreme.CommunicationKitchen.Client.Drawable;
 
 import io.github.apfelcreme.CommunicationKitchen.Client.CommunicationKitchen;
-import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,14 +28,16 @@ import java.util.UUID;
 public class DrawableOrder {
 
     private UUID id;
+    private final String type;
     private int x;
     private int y;
     private long timeLimit;
     private long timeCreated;
     private List<Drawable> ingredients = new ArrayList<Drawable>();
 
-    public DrawableOrder(UUID id, int x, int y, long timeLimit, List<UUID> ingredientIds) {
+    public DrawableOrder(UUID id, String type, int x, int y, long timeLimit, List<UUID> ingredientIds) {
         this.id = id;
+        this.type = type;
         this.x = x;
         this.y = y;
         this.timeLimit = timeLimit;
@@ -55,6 +57,15 @@ public class DrawableOrder {
      */
     public UUID getId() {
         return id;
+    }
+
+    /**
+     * returns the order type name
+     *
+     * @return the order type name
+     */
+    public String getType() {
+        return type;
     }
 
     /**
@@ -118,5 +129,15 @@ public class DrawableOrder {
      */
     public List<Drawable> getIngredients() {
         return ingredients;
+    }
+
+    /**
+     * sets the time to shorten or lengthen the cooldown
+     *
+     * @param timeLimit the new time limit
+     */
+    public void setTimeNewLimit(long timeLimit) {
+        this.timeLimit = timeLimit;
+        this.timeCreated = new Date().getTime();
     }
 }

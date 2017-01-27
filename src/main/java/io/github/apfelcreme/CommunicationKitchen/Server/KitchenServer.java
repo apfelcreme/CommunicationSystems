@@ -1,7 +1,7 @@
 package io.github.apfelcreme.CommunicationKitchen.Server;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
-import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.Order;
 
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
@@ -13,6 +13,7 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
@@ -41,17 +42,30 @@ public class KitchenServer extends JFrame implements Runnable {
     private static KitchenServer instance = null;
 
     private ServerSocket serverSocket = null;
+
     private Dimension fieldDimension = new Dimension(460, 380);
 
-    private List<ConnectionHandler> clientConnections = new ArrayList<ConnectionHandler>();
-
+    /**
+     * a list of all players
+     */
     private List<Player> players = new ArrayList<Player>();
 
-    private List<Order> orders = new ArrayList<Order>();
+    /**
+     * a list of all client connections
+     */
+    private List<ConnectionHandler> clientConnections = new ArrayList<ConnectionHandler>();
 
+    /**
+     * the log textfield
+     */
     private JTextArea log;
 
-    private IngredientSpawner ingredientSpawner = null;
+    private JList<UUID> playerListGui = new JList<UUID>();
+
+    /**
+     * the game instance
+     */
+    private Game game;
 
     private KitchenServer() {
         try {
@@ -74,23 +88,31 @@ public class KitchenServer extends JFrame implements Runnable {
         log.setWrapStyleWord(true);
         DefaultCaret caret = (DefaultCaret) log.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+        DefaultListModel<UUID> playerList = new DefaultListModel<UUID>();
+        playerListGui.setModel(playerList);
+
         this.setLayout(new GridBagLayout());
         this.getContentPane().add(bnStart,
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
+                new GridBagConstraints(0, 0, 2, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(new JScrollPane(log),
                 new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
+        this.getContentPane().add(playerListGui,
+                new GridBagConstraints(1, 1, 1, 1, 0.0, 1.0,
+                        GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
         bnStart.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                long time = 15000;
-                if (ingredientSpawner != null) {
-                    ingredientSpawner.cancel();
+                if (allPlayersReady()) {
+                    game = new Game(10000, 10000, 10);
+                } else {
+                    JOptionPane.showMessageDialog(KitchenServer.getInstance(), "Es sind noch nicht alle Spieler bereit!",
+                            "Fehler", JOptionPane.OK_OPTION);
                 }
-                ingredientSpawner = new IngredientSpawner(time);
-                new Timer().schedule(ingredientSpawner, 0, time);
             }
         });
         this.addWindowListener(new WindowAdapter() {
@@ -100,16 +122,13 @@ public class KitchenServer extends JFrame implements Runnable {
                     if (!serverSocket.isClosed()) {
                         serverSocket.close();
                     }
-                    if (ingredientSpawner != null) {
-                        ingredientSpawner.cancel();
-                    }
                     System.exit(0);
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
             }
         });
-        this.setSize(300, 400);
+        this.setSize(600, 400);
         this.setVisible(true);
     }
 
@@ -123,6 +142,8 @@ public class KitchenServer extends JFrame implements Runnable {
                 if (socket.isConnected()) {
                     clientConnections.add(new ConnectionHandler(socket));
                 }
+            } catch (SocketException e) {
+                System.out.println("Socket ist nicht verfügbar");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -181,6 +202,21 @@ public class KitchenServer extends JFrame implements Runnable {
         for (Iterator<Player> plIterator = players.iterator(); plIterator.hasNext(); ) {
             if (plIterator.next().getId().equals(id)) {
                 plIterator.remove();
+                ((DefaultListModel) playerListGui.getModel()).removeElement(id);
+            }
+        }
+    }
+
+    /**
+     * adds a player to the player list
+     *
+     * @param player the player
+     */
+    public void addPlayer(Player player) {
+        players.add(player);
+        ((DefaultListModel<UUID>) playerListGui.getModel()).addElement(player.getId());
+    }
+
     /**
      * checks if all players are ready
      *

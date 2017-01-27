@@ -1,15 +1,14 @@
 package io.github.apfelcreme.CommunicationKitchen.Server.Entities;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
-
-import com.sun.org.apache.xpath.internal.operations.Or;
 import io.github.apfelcreme.CommunicationKitchen.Server.ConnectionHandler;
 import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
-import io.github.apfelcreme.CommunicationKitchen.Server.Order;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.Order;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.QueueOrder;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.TimeOrder;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
+
+import java.util.*;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -47,6 +46,9 @@ public class Player {
     }
 
     public void move(Direction direction) {
+        if (KitchenServer.getInstance().getGame() == null) {
+            return;
+        }
         int maxX = KitchenServer.getInstance().getFieldDimension().width;
         int maxY = KitchenServer.getInstance().getFieldDimension().height;
         switch (direction) {
@@ -125,61 +127,85 @@ public class Player {
         }
 
         // can the player pickup or deliver an ingredient?
-        for (Iterator<Order> it = KitchenServer.getInstance().getOrders().iterator(); it.hasNext(); ) {
-            Order order = it.next();
-            boolean orderCancelled = false;
-            for (Ingredient ingredient : order.getIngredients()) {
-                if (ingredient.getStatus() == Ingredient.Status.MISSING) {
-                    if (Util.arePositionsEqual(this.x, this.y, ingredient.getX(), ingredient.getY(), 25)) {
-                        KitchenServer.getInstance().log("Player catched ingredient " + ingredient.getType());
-                        if (this.carrying == null) {
-                            ingredient.setStatus(Ingredient.Status.IS_BEING_CARRIED);
-                            this.carrying = ingredient;
-                            ConnectionHandler.broadcastRemoveDrawable(ingredient.getId());
-                            ConnectionHandler.broadcastAdditionToHand(id, ingredient.getType().getDrawableType());
-                        }
-                    }
-                }
-            }
-            Pot pot = order.getPot();
-            if (pot != null) {
-                if (Util.arePositionsEqual(this.x, this.y, pot.getX(), pot.getY(), 30)) {
-                    if (carrying != null) {
-                        int alreadyDeliveredCounter = order.getIngredients(Ingredient.Status.WAS_DELIVERED).size();
-
-                        //does the item being carried equal the next required item?
-                        if (carrying.equals(order.getIngredients().get(alreadyDeliveredCounter))) {
-                            KitchenServer.getInstance().log(this.getId() + " hat Ingredient abgelegt!");
-                            order.getIngredients().get(carrying.getQueuePos()).setStatus(Ingredient.Status.WAS_DELIVERED);
-                            this.carrying = null;
-                            ConnectionHandler.broadcastRemovalFromHand(id);
-                        } else {
-                            order.remove();
-                            order.cancel();
-                            KitchenServer.getInstance().log("Die Bestellung" + order.getId()
-                                    + " ist fehlgeschlagen!");
-                            ConnectionHandler.broadcastDamage();
-                            orderCancelled = true;
-                        }
-                    }
-                }
-            }
-
-            // was an order completed successfully?
-            if ((order.getIngredients(Ingredient.Status.MISSING).size() == 0)
-                    && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)
-                    && !orderCancelled) {
-                KitchenServer.getInstance().log(getId().toString() + " hat Bestellung " + order.getId()
-                        + " erfolgreich beendet");
-                order.cancel();
-                order.remove();
-                it.remove();
-            }
+        List<Order> copy = new ArrayList<Order>();
+        copy.addAll(KitchenServer.getInstance().getGame().getOrders());
+        for (Order order : copy) {
+            checkForOrderCompletion(order);
         }
 
         // send a message to all clients, so they can redraw the position
         // of the player on their own GUIs
         ConnectionHandler.broadcastPlayerMove(this);
+    }
+
+    /**
+     * checks if an order was completed
+     *
+     * @param order the order
+     */
+    private void checkForOrderCompletion(Order order) {
+        for (Ingredient ingredient : order.getIngredients()) {
+            if (ingredient.getStatus() == Ingredient.Status.MISSING) {
+                if (Util.arePositionsEqual(this.x, this.y, ingredient.getX(), ingredient.getY(), 20)) {
+                    KitchenServer.getInstance().log("Player catched ingredient " + ingredient.getType());
+                    if (this.carrying == null) {
+                        ingredient.setStatus(Ingredient.Status.IS_BEING_CARRIED);
+                        this.carrying = ingredient;
+                        ConnectionHandler.broadcastRemoveDrawable(ingredient.getId());
+                        ConnectionHandler.broadcastAdditionToHand(id, ingredient.getType().getDrawableType());
+                    }
+                }
+            }
+        }
+        Pot pot = order.getPot();
+        if (pot != null) {
+            if (Util.arePositionsEqual(this.x, this.y, pot.getX(), pot.getY(), 30)) {
+                if (carrying != null) {
+
+                    /*
+                    INSERT THE INGREDIENTS IN THE CORRECT ORDER
+                     */
+                    if (order instanceof QueueOrder) {
+
+                        QueueOrder queueOrder = (QueueOrder) order;
+
+                        //does the item being carried equal the next required item?
+                        if (carrying.equals(queueOrder.getIngredients().get(queueOrder.getNextQueuePosition()))) {
+                            KitchenServer.getInstance().log(this.getId() + " hat Ingredient abgelegt!");
+                            queueOrder.getIngredients().get(carrying.getQueuePos() - 1).setStatus(Ingredient.Status.WAS_DELIVERED);
+                            this.carrying = null;
+                            ConnectionHandler.broadcastRemovalFromHand(id);
+                        } else {
+                            queueOrder.remove(Order.Result.FAILED);
+                        }
+
+                    /*
+                    INSERT THE INGREDIENTS IN A SMALL TIME FRAME
+                     */
+                    } else if (order instanceof TimeOrder) {
+                        TimeOrder timeOrder = (TimeOrder) order;
+                        for (Ingredient ingredient : timeOrder.getIngredients()) {
+                            if (ingredient.equals(carrying)) {
+
+                                // if the ingredient is the first that is delivered: start a countdown
+                                if (timeOrder.getIngredients(Ingredient.Status.WAS_DELIVERED).size() == 0) {
+                                    timeOrder.startCountdown();
+                                }
+                                ingredient.setStatus(Ingredient.Status.WAS_DELIVERED);
+                                this.carrying = null;
+                                ConnectionHandler.broadcastRemovalFromHand(id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // was an order completed successfully?
+        if ((order.getIngredients(Ingredient.Status.MISSING).size() == 0)
+                && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)) {
+            order.remove(Order.Result.SUCCESS);
+        }
     }
 
     /**

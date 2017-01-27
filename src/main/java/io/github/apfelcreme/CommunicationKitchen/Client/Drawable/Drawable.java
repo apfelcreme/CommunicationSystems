@@ -62,6 +62,7 @@ public class Drawable {
 
     /**
      * returns the number that is being drawn under the item
+     *
      * @return the number that is being drawn under the item
      */
     public int getQueuePos() {
@@ -115,6 +116,7 @@ public class Drawable {
 
     /**
      * returns the image
+     *
      * @return the image
      */
     public BufferedImage getImage() {
@@ -127,12 +129,19 @@ public class Drawable {
      * @param g the graphics object
      */
     public void draw(Graphics g) {
-        if (image != null) {
-            g.drawImage(image, x - (image.getWidth() / 2), y - (image.getHeight() / 2), null);
-        }
-        g.setColor(Color.BLACK);
-        if (queuePos > 0) {
-            g.drawString(Integer.toString(queuePos), x - (image.getWidth() / 2) - 2, y + 20);
+        try {
+            if (image != null) {
+                g.drawImage(image, x - (image.getWidth() / 2), y - (image.getHeight() / 2), null);
+            }
+            g.setColor(Color.BLACK);
+            if (queuePos > 0) {
+                g.drawString(Integer.toString(queuePos), x - (image.getWidth() / 2) + 12, y + 20);
+            } else if (queuePos == -2) {
+                g.drawImage(ImageIO.read(Drawable.class
+                        .getResourceAsStream("/clock.png")), x - 12, y + 12, null);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

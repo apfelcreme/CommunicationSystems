@@ -1,8 +1,10 @@
-package io.github.apfelcreme.CommunicationKitchen.Server;
+package io.github.apfelcreme.CommunicationKitchen.Server.Order;
 
+import io.github.apfelcreme.CommunicationKitchen.Server.ConnectionHandler;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
+import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
 
 import java.util.*;
 
@@ -24,35 +26,25 @@ import java.util.*;
  *
  * @author Lord36 aka Apfelcreme
  */
-public class Order extends TimerTask {
+public abstract class Order extends TimerTask {
 
     private UUID id;
-    private ArrayList<Ingredient> ingredients;
+    protected ArrayList<Ingredient> ingredients;
     private long time;
     private Pot pot;
 
-    public Order(UUID id, int amount, long time) {
+    public Order(UUID id, long time) {
         this.id = id;
         this.time = time;
-        this.ingredients = new ArrayList<Ingredient>();
-
-        // spawn n ingredients
-        for (int i = 0; i < amount; i++) {
-            Ingredient ingredient = new Ingredient(
-                    UUID.randomUUID(),
-                    i,
-                    Ingredient.Type.random(),
-                    40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().width - 60),
-                    40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().height - 60));
-            ingredients.add(ingredient);
-        }
         new Timer().schedule(this, time);
     }
 
     /**
      * removes the order
+     *
+     * @param result the result of the order
      */
-    public void remove() {
+    public void remove(Order.Result result) {
         // remove all ingredients from this order that are currently held by players
         for (Player player : KitchenServer.getInstance().getPlayers()) {
             for (Ingredient ingredient : ingredients) {
@@ -65,6 +57,13 @@ public class Order extends TimerTask {
             }
         }
 
+        if (result == Result.SUCCESS) {
+            KitchenServer.getInstance().log("Bestellung erfolgreich beendet");
+        } else{
+            ConnectionHandler.broadcastDamage();
+            KitchenServer.getInstance().log("Bestellung ist fehlgeschlagen!");
+        }
+
         for (Ingredient ingredient : ingredients) {
             ConnectionHandler.broadcastRemoveDrawable(ingredient.getId());
         }
@@ -73,6 +72,11 @@ public class Order extends TimerTask {
         ConnectionHandler.broadcastRemoveOrder(this);
 
         ingredients.clear();
+
+        this.cancel();
+
+        KitchenServer.getInstance().getGame().getOrders().remove(this);
+
     }
 
     /**
@@ -95,6 +99,7 @@ public class Order extends TimerTask {
 
     /**
      * returns all ingredients with a given status
+     *
      * @param status the status
      * @return all ingredients with the given status
      */
@@ -138,8 +143,15 @@ public class Order extends TimerTask {
      */
     @Override
     public void run() {
-        KitchenServer.getInstance().log("Auftrag "+id+" fehlgeschlagen");
+        KitchenServer.getInstance().log("Auftrag " + id + " fehlgeschlagen");
         ConnectionHandler.broadcastDamage();
-        remove();
+        remove(Result.FAILED);
+    }
+
+    /**
+     * the result of the order
+     */
+    public enum Result {
+        SUCCESS, FAILED
     }
 }

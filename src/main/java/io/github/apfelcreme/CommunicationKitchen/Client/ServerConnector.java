@@ -192,7 +192,7 @@ public class ServerConnector implements Runnable {
                     CommunicationKitchen.getInstance().getDrawables()
                             .addAll(Util.deserializePlayerList(inputStream.readUTF()));
 
-                    CommunicationKitchen.getInstance().setSize(w + 10, h + 160);
+                    CommunicationKitchen.getInstance().setSize(w + 10, h + 210);
                     DrawingBoard.getInstance().setSize(w, h);
                     CommunicationKitchen.getInstance().setVisible(true);
                     DrawingBoard.getInstance().requestFocus();
@@ -258,6 +258,7 @@ public class ServerConnector implements Runnable {
 
                 } else if (message.equals("ADDORDER")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
+                    String type = inputStream.readUTF();
                     long time = inputStream.readLong();
                     List<UUID> ingredientIds = new ArrayList<UUID>();
                     String s = inputStream.readUTF();
@@ -265,13 +266,18 @@ public class ServerConnector implements Runnable {
                         ingredientIds.add(UUID.fromString(ingredientId));
                     }
                     CommunicationKitchen.getInstance().getOrders().add(
-                            new DrawableOrder(id, 0, 0, time, ingredientIds));
+                            new DrawableOrder(id, type, 0, 0, time, ingredientIds));
 
                 } else if (message.equals("REMOVEORDER")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     CommunicationKitchen.getInstance().removeOrder(id);
 
-
+                } else if (message.equals("TIMEORDERSTART")) {
+                    UUID id = UUID.fromString(inputStream.readUTF());
+                    DrawableOrder drawableOrder = CommunicationKitchen.getInstance().getDrawableOrder(id);
+                    if (drawableOrder != null) {
+                        drawableOrder.setTimeNewLimit(inputStream.readLong());
+                    }
                 } else if (message.equals("DAMAGE")) {
                     DrawingBoard.getInstance().setDrawDamageOnNextTick(true);
                 }
