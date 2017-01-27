@@ -36,12 +36,14 @@ public class Player {
     private int y;
     private Direction direction;
     private Ingredient carrying;
+    private boolean ready;
 
     public Player(UUID id, int x, int y, Direction direction) {
         this.id = id;
         this.x = x;
         this.y = y;
         this.direction = direction;
+        ready = false;
     }
 
     public void move(Direction direction) {
@@ -322,4 +324,21 @@ public class Player {
         this.carrying = carrying;
     }
 
+    /**
+     * sets this players status
+     *
+     * @param ready ready or not ready
+     */
+    public void setReady(boolean ready) {
+        this.ready = ready;
+    }
+
+    /**
+     * is the player ready?
+     *
+     * @return true or false
+     */
+    public boolean isReady() {
+        return ready;
+    }
 }

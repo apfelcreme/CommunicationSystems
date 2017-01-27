@@ -181,8 +181,18 @@ public class KitchenServer extends JFrame implements Runnable {
         for (Iterator<Player> plIterator = players.iterator(); plIterator.hasNext(); ) {
             if (plIterator.next().getId().equals(id)) {
                 plIterator.remove();
+    /**
+     * checks if all players are ready
+     *
+     * @return true or false
+     */
+    public boolean allPlayersReady() {
+        for (Player player : players) {
+            if (!player.isReady()) {
+                return false;
             }
         }
+        return true;
     }
 
     /**
@@ -195,12 +205,12 @@ public class KitchenServer extends JFrame implements Runnable {
     }
 
     /**
-     * returns the list of orders that are currently active
+     * returns the game instance
      *
-     * @return the list of orders
+     * @return the game instance
      */
-    public List<Order> getOrders() {
-        return orders;
+    public Game getGame() {
+        return game;
     }
 
     /**

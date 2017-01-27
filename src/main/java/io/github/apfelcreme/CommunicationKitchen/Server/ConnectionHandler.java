@@ -95,6 +95,15 @@ public class ConnectionHandler implements Runnable {
                     KitchenServer.getInstance().getClientConnections().remove(this);
                     socket.close();
 
+                } else if (message.equals("READY")) {
+                    UUID id = UUID.fromString(inputStream.readUTF());
+                    Boolean ready = inputStream.readBoolean();
+                    Player player = KitchenServer.getInstance().getPlayer(id);
+                    if (player != null) {
+                        player.setReady(ready);
+                        KitchenServer.getInstance().log("Player " + id + " is " + (ready ? "" : "not ") + "ready");
+                    }
+
                 } else if (message.equals("CHAT")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     String chat = inputStream.readUTF();

@@ -64,6 +64,11 @@ public class CommunicationKitchen extends JFrame {
 
     private JTextField chat = new JTextField("Chat");
     private JButton bSend = new JButton("Send");
+    private JToggleButton bnReady = new JToggleButton();
+
+    static {
+        UIManager.put("ToggleButton.select", new Color(0, 150, 0));
+    }
 
     private CommunicationKitchen() {
         String ip = JOptionPane.showInputDialog(this, "IP", "127.0.0.1");
@@ -98,6 +103,13 @@ public class CommunicationKitchen extends JFrame {
                 GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                 new Insets(3, 0, 3, 0), 0, 0));
         chatBg.setBackground(new Color(47, 47, 47));
+
+        bnReady.setIcon(new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/ready.png"))));
+        bnReady.setBackground(new Color(47, 47, 47));
+        bnReady.setFocusPainted(false);
+        bnReady.setBorder(BorderFactory.createEmptyBorder());
+        bnReady.setRolloverEnabled(false);
+        bnReady.setFocusable(false);
 
         //TOP
         BorderPanel buttons = new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/Top.png"))
@@ -140,40 +152,44 @@ public class CommunicationKitchen extends JFrame {
         //MID
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/Left.png"))
                         .getScaledInstance(25, 1000, Image.SCALE_SMOOTH))),
-                new GridBagConstraints(0, 1, 1, 3, 0.0, 1.0,
+                new GridBagConstraints(0, 1, 1, 4, 0.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(OrderBoard.getInstance(),
                 new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
+        this.getContentPane().add(bnReady,
+                new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+                        GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(DrawingBoard.getInstance(),
-                new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0,
+                new GridBagConstraints(1, 3, 1, 1, 1.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(chatBg,
-                new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
+                new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/Right.png"))
                         .getScaledInstance(25, 1000, Image.SCALE_SMOOTH))),
-                new GridBagConstraints(2, 1, 1, 3, 0.0, 1.0,
+                new GridBagConstraints(2, 1, 1, 4, 0.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
 
 
         //BOTTOM
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/BottomLeft.png")))),
-                new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/Bottom.png"))
                         .getScaledInstance(1000, 25, Image.SCALE_SMOOTH))),
-                new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
+                new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/BottomRight.png")))),
-                new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
 
@@ -200,8 +216,12 @@ public class CommunicationKitchen extends JFrame {
                 DrawingBoard.getInstance().requestFocus();
             }
         });
+        bnReady.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                ServerConnector.getInstance().sendReady(me, bnReady.isSelected());
+            }
+        });
         this.setSize(new Dimension(width, height));
-        DrawingBoard.getInstance().requestFocus();
     }
 
     /**

@@ -143,6 +143,23 @@ public class ServerConnector implements Runnable {
     }
 
     /**
+     * sends a message that you are ready
+     *
+     * @param id    me (the player who pressed the button)
+     * @param ready ready or not ready
+     */
+    public void sendReady(UUID id, boolean ready) {
+        try {
+            outputStream.writeUTF("READY");
+            outputStream.writeUTF(id.toString());
+            outputStream.writeBoolean(ready);
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * sends a message to the server
      *
      * @param message the message
