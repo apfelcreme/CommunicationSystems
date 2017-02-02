@@ -100,6 +100,12 @@ public class ConnectionHandler implements Runnable {
                     String chat = inputStream.readUTF();
                     KitchenServer.getInstance().log("Chat-Message from [" + id + "]: " + chat);
                     broadcastChatMessage(id, chat);
+                    
+                } else if (message.equals("READY")) {
+                    UUID id = UUID.fromString(inputStream.readUTF());                    
+                    KitchenServer.getInstance().log("Player [" + id + "] is ready");
+                    KitchenServer.getInstance().getPlayer(id).setReady(true);
+                    KitchenServer.getInstance().startGame();
                 }
             }
         } catch (IOException e) {
@@ -310,6 +316,38 @@ public class ConnectionHandler implements Runnable {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
                     connectionHandler.getOutputStream().writeUTF("DAMAGE");
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * forces all clients to show failure message
+     */
+    public static void broadcastGameOver(String reason) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("GAMEOVER_" + reason);
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * forces all clients to show success message
+     */
+    public static void broadcastSuccess(String reason) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("SUCCESS_" + reason);
                     connectionHandler.getOutputStream().flush();
                 }
             }

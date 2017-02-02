@@ -94,6 +94,21 @@ public class ServerConnector implements Runnable {
     }
 
     /**
+     * sends a message to let the server know that the player is ready
+     *
+     * @param id me (the player who is ready to play)
+     */
+    public void sendPlayerReady(UUID id) {
+        try {
+            outputStream.writeUTF("READY");
+            outputStream.writeUTF(id.toString());
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+  
+    /**
      * sends a move request to the server
      *
      * @param id        me (the player who did the key stroke)
@@ -254,10 +269,30 @@ public class ServerConnector implements Runnable {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     CommunicationKitchen.getInstance().removeOrder(id);
 
-
                 } else if (message.equals("DAMAGE")) {
-                    DrawingBoard.getInstance().setDrawDamageOnNextTick(true);
-                }
+                    DrawingBoard.getInstance().setDrawDamageOnNextTick(true);                                       
+                    
+                } else if (message.equals("GAMEOVER_TIME")) {                                        
+                    CommunicationKitchen.getInstance().setMessage("Leider ist die Zeit abgelaufen! Um die vielen Zutaten in der kurzen Zeit einzusammeln und im Kochtopf zu platzieren, ist es wichtig, dass du dich mit deinen Mitspielern abstimmst! Insbesondere solltet ihr euch darauf einigen, wer welche Zutaten einsammelt. Du kannst dafür den Chat nutzen!");
+                    
+                } else if (message.equals("GAMEOVER_SEQUENCE")) {                                        
+                    CommunicationKitchen.getInstance().setMessage("Die Reihenfolge der Zutaten stimmt nicht! Nutze den Chat, um mit deinen Mitspielern zu besprechen, wer welche Zutaten zu welcher Zeit in den Kochtopf gibt.");
+                    
+                } else if (message.equals("GAMEOVER_SYNC")) {                                        
+                    CommunicationKitchen.getInstance().setMessage("Leider habt ihr die Zutaten nicht schnell genug hintereinander in den Kochtopf gegeben.");
+                    
+                } 
+                // TODO: Change messages when they're final
+                else if (message.equals("SUCCESS_TIME")) {                                        
+                    CommunicationKitchen.getInstance().setMessage("You win! (Time)");
+                    
+                } else if (message.equals("SUCCESS_SEQUENCE")) {                                        
+                    CommunicationKitchen.getInstance().setMessage("You win! (Sequence)");
+                    
+                } else if (message.equals("SUCCESS_SYNC")) {                                        
+                    CommunicationKitchen.getInstance().setMessage("You win! (Synchronous)");
+                    
+                }             
 
             }
         } catch (UTFDataFormatException e) {

@@ -36,6 +36,7 @@ public class Player {
     private int y;
     private Direction direction;
     private Ingredient carrying;
+    private boolean ready = false;
 
     public Player(UUID id, int x, int y, Direction direction) {
         this.id = id;
@@ -111,7 +112,8 @@ public class Player {
                             order.cancel();
                             KitchenServer.getInstance().log("Die Bestellung" + order.getId()
                                     + " ist fehlgeschlagen!");
-                            ConnectionHandler.broadcastDamage();
+                            //ConnectionHandler.broadcastDamage();
+                            KitchenServer.getInstance().handleFailure("SEQUENCE");
                             orderCancelled = true;
                         }
                     }
@@ -127,6 +129,9 @@ public class Player {
                 order.cancel();
                 order.remove();
                 it.remove();
+                // TODO: Give the correct reason for succeeding. 
+                // We first have to develop a concept, e.g. 1st level: time, 2nd level: sequence, 3rd level: synchronous, 4th level: mixed
+                KitchenServer.getInstance().handleSuccess("TIME");
             }
         }
 
@@ -236,5 +241,19 @@ public class Player {
     public void setCarrying(Ingredient carrying) {
         this.carrying = carrying;
     }
+
+	/**
+	 * @return the ready
+	 */
+	public boolean isReady() {
+		return ready;
+	}
+
+	/**
+	 * @param ready the ready to set
+	 */
+	public void setReady(boolean ready) {
+		this.ready = ready;
+	}
 
 }

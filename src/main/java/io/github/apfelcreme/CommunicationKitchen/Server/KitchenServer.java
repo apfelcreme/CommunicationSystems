@@ -1,11 +1,9 @@
 package io.github.apfelcreme.CommunicationKitchen.Server;
 
-import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
-import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
-
-import javax.swing.*;
-import javax.swing.text.DefaultCaret;
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -14,9 +12,25 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.text.DefaultCaret;
+
+import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -51,7 +65,15 @@ public class KitchenServer extends JFrame implements Runnable {
 
     private JTextArea log;
 
-    private IngredientSpawner ingredientSpawner = null;
+    private IngredientSpawner ingredientSpawner = null;       
+    
+    private final int lives = 1;
+    
+    private int currentLives = lives;
+    
+    private final int rounds = 1;
+    
+    private int currentRound = 0;
 
     private KitchenServer() {
         try {
@@ -85,12 +107,13 @@ public class KitchenServer extends JFrame implements Runnable {
                         new Insets(0, 0, 0, 0), 0, 0));
         bnStart.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                long time = 15000;
-                if (ingredientSpawner != null) {
-                    ingredientSpawner.cancel();
-                }
-                ingredientSpawner = new IngredientSpawner(time);
-                new Timer().schedule(ingredientSpawner, 0, time);
+//                long time = 15000;
+//                if (ingredientSpawner != null) {
+//                    ingredientSpawner.cancel();
+//                }
+//                ingredientSpawner = new IngredientSpawner(time);
+//                new Timer().schedule(ingredientSpawner, 0, time);
+            	startGame();
             }
         });
         this.addWindowListener(new WindowAdapter() {
@@ -127,6 +150,90 @@ public class KitchenServer extends JFrame implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+    
+    /**
+     * Starts a game if all players are ready
+     * 
+     * @param time
+     * @return true if game is started, otherwise false
+     */
+    public boolean startGame(long time) {
+    	
+    	currentLives = lives;
+    	currentRound = 0;
+    	
+    	for (Player player : players) {
+    		if (!player.isReady()) {
+    			return false;
+    		}
+    	}
+    	if (ingredientSpawner != null) {
+            ingredientSpawner.cancel();
+        }
+        ingredientSpawner = new IngredientSpawner(time);             
+        new Timer().schedule(ingredientSpawner, 0, time);      
+        
+        return true;
+    }
+    
+    public boolean startGame() {
+    	return startGame(15000);
+    }
+    
+    /**
+     * Stops the game and broadcasts either a success or a failure message.
+     * 
+     * @param failure - true if the game stops due to failure, otherwise false
+     * @param reason - the reason for failing or the learned skill in case of success
+     */
+    public void stopGame(boolean failure, String reason) {
+    	
+    	if (failure) {
+    		ConnectionHandler.broadcastGameOver(reason);
+    		
+    	} else {
+    		ConnectionHandler.broadcastSuccess(reason);
+    	}
+    	
+    	if (ingredientSpawner != null) {
+            ingredientSpawner.cancel();
+        }
+
+    	this.log("Stop game due to " + (failure ? "failure. " : "success. ") + "Reason: " + reason);
+//    	orders.clear();    	
+    }
+    
+    /**
+     * Handles a failure. Stops the game if necessary (no more lives)
+     * 
+     * @param reason - the reason for failing
+     */
+    public void handleFailure(String reason) {
+    	
+    	currentLives--;
+    	
+    	if (currentLives <= 0) {
+    		stopGame(true, reason);
+    		
+    	} else {
+    		ConnectionHandler.broadcastDamage();
+    	}
+    }
+
+    /**
+     * Handles a success. Stops the game if necessary (all rounds at the current level completed)
+     * 
+     * @param learnedSkill - the learned skill
+     */
+    public void handleSuccess(String learnedSkill) {
+    	
+    	currentRound++;
+    	
+    	if (currentRound >= rounds) {
+    		stopGame(false, learnedSkill);    			
+    	}
+    	
     }
 
     /**

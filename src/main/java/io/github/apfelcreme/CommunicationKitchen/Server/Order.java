@@ -139,7 +139,9 @@ public class Order extends TimerTask {
     @Override
     public void run() {
         KitchenServer.getInstance().log("Auftrag "+id+" fehlgeschlagen");
-        ConnectionHandler.broadcastDamage();
         remove();
+        cancel();
+        KitchenServer.getInstance().handleFailure("TIME");
+        //ConnectionHandler.broadcastDamage();
     }
 }

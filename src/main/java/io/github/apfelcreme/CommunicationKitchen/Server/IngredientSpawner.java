@@ -42,7 +42,8 @@ public class IngredientSpawner extends TimerTask {
         //TODO: Hier: anz spieler eintragen
         //TODO:                                    |
         //TODO:                                    V
-        Order order = new Order(UUID.randomUUID(), 3, time);
+
+    	Order order = new Order(UUID.randomUUID(), 3, time-100); // We need some time (100 ms) to prevent the ingredient spawner from creating a new order when the game stops because the time is over (failure) 
         KitchenServer.getInstance().getOrders().add(order);
         KitchenServer.getInstance().log("Order-Spawn: ");
         int z = 0;
