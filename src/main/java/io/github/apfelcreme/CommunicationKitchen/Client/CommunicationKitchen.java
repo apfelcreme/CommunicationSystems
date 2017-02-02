@@ -5,14 +5,19 @@ import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawableOrder;
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePlayer;
 import io.github.apfelcreme.CommunicationKitchen.Client.UI.BorderPanel;
 import io.github.apfelcreme.CommunicationKitchen.Client.UI.DrawingBoard;
+import io.github.apfelcreme.CommunicationKitchen.Client.UI.HeartBoard;
 import io.github.apfelcreme.CommunicationKitchen.Client.UI.OrderBoard;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.multi.MultiLabelUI;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.Timer;
 
@@ -63,11 +68,14 @@ public class CommunicationKitchen extends JFrame {
     private Set<Integer> keysPressed;
 
     private UUID me = null;
-    private int hearts;
+    private int hearts = 0;
+    private int round = 0;
 
     private JTextField chat = new JTextField("Chat");
     private JPanel messagePanel;
-    private JTextArea hintBox = new JTextArea();
+    private JButton messagePanelButton = new JButton("Ok!");
+    private JButton bnSend = new JButton("Send");
+    private JLabel hintBox = new JLabel();
     private JToggleButton bnReady = new JToggleButton();
 
     static {
@@ -76,9 +84,10 @@ public class CommunicationKitchen extends JFrame {
 
     private CommunicationKitchen() {
         String ip = JOptionPane.showInputDialog(this, "IP", "127.0.0.1");
+        String name = JOptionPane.showInputDialog(this, "Name", "Name");
         try {
             initGui(50, 50);
-            ServerConnector.getInstance().connect(ip, 1337);
+            ServerConnector.getInstance().connect(ip, 1337, name);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -94,38 +103,74 @@ public class CommunicationKitchen extends JFrame {
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{25, 100, 25};
-        gridBagLayout.rowHeights = new int[]{25, 100, 25};
+        gridBagLayout.rowHeights = new int[]{25, 25, 100, 30, 380, 30, 25};
         this.getContentPane().setLayout(gridBagLayout);
 
         chat.setBackground(new Color(67, 67, 67));
         chat.setForeground(Color.WHITE);
         chat.setBorder(BorderFactory.createEmptyBorder());
 
-        JButton bnSend = new JButton("Send");
-        bnSend.setBackground(new Color(47, 47, 47));
+        bnSend.setForeground(new Color(200, 200, 200));
+        bnSend.setBackground(new Color(67, 67, 67));
         bnSend.setBorder(BorderFactory.createEmptyBorder());
         bnSend.setFocusPainted(false);
+        bnSend.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                bnSend.setBackground(new Color(87, 87, 87));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                bnSend.setBackground(new Color(67, 67, 67));
+            }
+        });
 
         JPanel chatBg = new JPanel();
         chatBg.setLayout(new GridBagLayout());
         chatBg.add(chat, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                 GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                new Insets(3, 0, 3, 0), 0, 0));
+                new Insets(5, 0, 5, 0), 0, 0));
         chatBg.add(bnSend, new GridBagConstraints(1, 0, 1, 1, 0.0, 1.0,
                 GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                new Insets(3, 0, 3, 0), 0, 0));
+                new Insets(5, 0, 5, 0), 0, 0));
         chatBg.setBackground(new Color(47, 47, 47));
 
-        hintBox.setLineWrap(true);
-        hintBox.setWrapStyleWord(true);
+        hintBox.setOpaque(true);
         hintBox.setBackground(new Color(67, 67, 67));
-        hintBox.setForeground(Color.WHITE);
+        hintBox.setForeground(new Color(200, 200, 200));
         hintBox.setBorder(BorderFactory.createEmptyBorder());
+        hintBox.setVerticalAlignment(SwingConstants.CENTER);
+        hintBox.setBorder(new EmptyBorder(10, 10, 10, 10));
+        messagePanelButton.setFocusPainted(false);
+        messagePanelButton.setBackground(new Color(67, 67, 67));
+        messagePanelButton.setForeground(new Color(200, 200, 200));
+        messagePanelButton.setBorder(BorderFactory.createEmptyBorder());
+        messagePanelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                toggleMessageBoard(!messagePanel.isVisible());
+            }
+        });
+        messagePanelButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                messagePanelButton.setBackground(new Color(87, 87, 87));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                messagePanelButton.setBackground(new Color(67, 67, 67));
+            }
+        });
         messagePanel = new JPanel();
+        messagePanel.setBackground(new Color(0, 0, 0, 0));
         messagePanel.setLayout(new GridBagLayout());
         messagePanel.add(hintBox, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                 GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                new Insets(3, 0, 3, 0), 0, 0));
+                new Insets(3, 0, 0, 0), 0, 0));
+        messagePanel.add(messagePanelButton, new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
+                GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                new Insets(0, 0, 0, 0), 0, 0));
         messagePanel.setBackground(new Color(47, 47, 47));
 
         bnReady.setIcon(new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/ready.png"))));
@@ -149,6 +194,7 @@ public class CommunicationKitchen extends JFrame {
                 System.exit(0);
             }
         });
+
         JPanel emptySpace = new JPanel();
         emptySpace.setBackground(new Color(0, 0, 0, 0));
         buttons.setLayout(new GridBagLayout());
@@ -176,55 +222,58 @@ public class CommunicationKitchen extends JFrame {
         //MID
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/Left.png"))
                         .getScaledInstance(25, 1000, Image.SCALE_SMOOTH))),
-                new GridBagConstraints(0, 1, 1, 4, 0.0, 1.0,
+                new GridBagConstraints(0, 1, 1, 5, 0.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
-        this.getContentPane().add(OrderBoard.getInstance(),
+        this.getContentPane().add(HeartBoard.getInstance(),
                 new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
-        this.getContentPane().add(bnReady,
+        this.getContentPane().add(OrderBoard.getInstance(),
                 new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
+        this.getContentPane().add(bnReady,
+                new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
+                        GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(DrawingBoard.getInstance(),
-                new GridBagConstraints(1, 3, 1, 1, 1.0, 1.0,
+                new GridBagConstraints(1, 4, 1, 1, 1.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(messagePanel,
-                new GridBagConstraints(1, 3, 1, 1, 1.0, 1.0,
+                new GridBagConstraints(1, 4, 1, 1, 1.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(chatBg,
-                new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
+                new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/Right.png"))
                         .getScaledInstance(25, 1000, Image.SCALE_SMOOTH))),
-                new GridBagConstraints(2, 1, 1, 4, 0.0, 1.0,
+                new GridBagConstraints(2, 1, 1, 5, 0.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
 
 
         //BOTTOM
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/BottomLeft.png")))),
-                new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/Bottom.png"))
                         .getScaledInstance(1000, 25, Image.SCALE_SMOOTH))),
-                new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
+                new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(new BorderPanel(this, new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/Border/BottomRight.png")))),
-                new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(2, 6, 1, 1, 0.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
 
         this.dispose();
         this.setUndecorated(true);
-        this.setBackground(new Color(200, 0, 0, 0));
-
+        this.setBackground(new Color(0, 0, 0, 0));
 
         //Key Inputs
         initKeys();
@@ -247,15 +296,29 @@ public class CommunicationKitchen extends JFrame {
         bnReady.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ServerConnector.getInstance().sendReady(me, bnReady.isSelected());
-                messagePanel.setVisible(false);
-                DrawingBoard.getInstance().setVisible(true);
+                toggleMessageBoard(!bnReady.isSelected());
                 DrawingBoard.getInstance().requestFocus();
             }
         });
         this.setSize(new Dimension(width, height));
         DrawingBoard.getInstance().requestFocus();
 
-        setMessage("SPIELANLEITUNG");
+        System.out.println(new File(CommunicationKitchen.class.getResource("/checklist.png").toExternalForm()).exists());
+
+            setMessage(
+                    "<u><b>Spielanleitung:</b></u><br />" +
+                            "Ziel des Spiels ist es, alle Bestellungen abzuarbeiten, ohne dabei Fehler zu machen. Du wirst dich " +
+                            "mit deinen Mitspielern abstimmen müssen, da sonst entweder die Zeit nicht ausreicht, oder ihr Fehler " +
+                            "in der Zubereitung der Gerichte macht. <br />" +
+                            "Folgende Typen von Aufträgen müsst ihr meistern: " +
+                            "<left><ol>" +
+//                            "<li><img src=\"" + new File(CommunicationKitchen.class.getResource("/clock.png").toExternalForm()).getAbsolutePath() + "\" />" +
+                            "<li>&nbsp;auf Zeit: Nachdem einer von euch die erste Zutat abgeliefert hat, müsst ihr die anderen direkt danach einwerfen. </li><br />" +
+//                            "<li><img src=\"" + new File(CommunicationKitchen.class.getResource("/checklist.png").toExternalForm()).getAbsolutePath() + "\" />" +
+                            "<li>&nbsp;der Reihe nach: Die Zutaten müssen in einer festen Reihenfolge abgeliefert werden.</li>" +
+                            "</ol>" +
+                            "Wenn ihr die Bestellung nicht erfolgreich abschließen könnt, verliert ihr ein Leben!" +
+                            "</left>");
 
     }
 
@@ -306,6 +369,14 @@ public class CommunicationKitchen extends JFrame {
             }
         }
         return null;
+    }
+
+    /**
+     * removes a player object from the list
+     * @param id the player id
+     */
+    public void removeDrawablePlayer(UUID id) {
+        removeDrawable(id);
     }
 
     /**
@@ -391,10 +462,26 @@ public class CommunicationKitchen extends JFrame {
      * @param message the message
      */
     public void setMessage(String message) {
-        hintBox.setText(message);
-        DrawingBoard.getInstance().setVisible(false);
-        messagePanel.setVisible(true);
+        hintBox.setText("<html><left>" + message + "</left></html>");
+        toggleMessageBoard(true);
+    }
+
+    /**
+     * shows or hides the message board
+     */
+    private void toggleMessageBoard(boolean visible) {
+        DrawingBoard.getInstance().setVisible(!visible);
+        messagePanel.setVisible(visible);
         bnReady.requestFocusInWindow();
+    }
+
+    /**
+     * returns the amount of hearts the players have
+     *
+     * @return the amount of hearts the players have
+     */
+    public int getHearts() {
+        return hearts;
     }
 
     /**
@@ -407,12 +494,21 @@ public class CommunicationKitchen extends JFrame {
     }
 
     /**
-     * returns the amount of hearts the players have
+     * returns the current round
      *
-     * @return the amount of hearts the players have
+     * @return the current round
      */
-    public int getHearts() {
-        return hearts;
+    public int getRound() {
+        return round;
+    }
+
+    /**
+     * sets the current round
+     *
+     * @param round the new round number
+     */
+    public void setRound(int round) {
+        this.round = round;
     }
 
     /**

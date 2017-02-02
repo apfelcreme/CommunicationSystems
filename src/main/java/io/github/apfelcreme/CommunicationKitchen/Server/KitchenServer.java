@@ -60,7 +60,7 @@ public class KitchenServer extends JFrame implements Runnable {
     private JTextArea log;
     
     private int currentRound = 0;
-    private JList<UUID> playerListGui = new JList<UUID>();
+    private JList<Player> playerListGui = new JList<Player>();
 
     /**
      * the game instance
@@ -89,7 +89,7 @@ public class KitchenServer extends JFrame implements Runnable {
         DefaultCaret caret = (DefaultCaret) log.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
-        DefaultListModel<UUID> playerList = new DefaultListModel<UUID>();
+        DefaultListModel<Player> playerList = new DefaultListModel<Player>();
         playerListGui.setModel(playerList);
 
         this.setLayout(new GridBagLayout());
@@ -108,7 +108,7 @@ public class KitchenServer extends JFrame implements Runnable {
         bnStart.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (allPlayersReady()) {
-                    game = new Game(10000, 10, 1);
+                    game = new Game(10000, 10, 3);
                 } else {
                     JOptionPane.showMessageDialog(KitchenServer.getInstance(), "Es sind noch nicht alle Spieler bereit!",
                             "Fehler", JOptionPane.OK_OPTION);
@@ -200,9 +200,10 @@ public class KitchenServer extends JFrame implements Runnable {
      */
     public void removePlayer(UUID id) {
         for (Iterator<Player> plIterator = players.iterator(); plIterator.hasNext(); ) {
-            if (plIterator.next().getId().equals(id)) {
+            Player player = plIterator.next();
+            if (player.getId().equals(id)) {
                 plIterator.remove();
-                ((DefaultListModel) playerListGui.getModel()).removeElement(id);
+                ((DefaultListModel) playerListGui.getModel()).removeElement(player);
             }
         }
     }
@@ -214,7 +215,7 @@ public class KitchenServer extends JFrame implements Runnable {
      */
     public void addPlayer(Player player) {
         players.add(player);
-        ((DefaultListModel<UUID>) playerListGui.getModel()).addElement(player.getId());
+        ((DefaultListModel<Player>) playerListGui.getModel()).addElement(player);
     }
 
     /**

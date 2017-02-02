@@ -31,11 +31,13 @@ import java.util.UUID;
 public class DrawablePlayer extends Drawable {
 
     private Direction direction;
+    private String name;
     private String chat;
     private DrawableType carrying;
 
-    public DrawablePlayer(UUID id, int x, int y) {
+    public DrawablePlayer(UUID id, String name, int x, int y) {
         super(id, 0, DrawableType.PLAYER, x, y);
+        this.name = name;
         this.chat = "";
         this.direction = Direction.SOUTH;
         carrying = DrawableType.NOTHING;
@@ -86,16 +88,17 @@ public class DrawablePlayer extends Drawable {
         super.draw(g);
 
         if (!chat.isEmpty()) {
-            g.drawString(chat, getX() + 20, getY());
+            g.drawString(chat, getX() + 20, getY() + 20);
         }
+        g.drawString(name, getX() + 20, getY());
 
         try {
             if (carrying != DrawableType.NOTHING) {
                 g.setColor(Color.WHITE);
-                g.fillOval(getX() - 10, getY() - 50, 25, 25);
+                g.fillOval(getX() - 10, getY() - 45, 25, 25);
                 g.drawImage(ImageIO.read(DrawablePlayer.class
                         .getResourceAsStream("/Drawables/" + carrying.name() + ".png"))
-                        .getScaledInstance(25, 25, Image.SCALE_SMOOTH), getX() - 10, getY() - 50, null);
+                        .getScaledInstance(25, 25, Image.SCALE_SMOOTH), getX() - 10, getY() - 45, null);
             }
         } catch (IOException e) {
             e.printStackTrace();

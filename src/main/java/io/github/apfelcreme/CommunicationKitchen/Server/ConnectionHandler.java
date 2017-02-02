@@ -41,6 +41,7 @@ public class ConnectionHandler implements Runnable {
         try {
             this.socket = socket;
             this.outputStream = new ObjectOutputStream(socket.getOutputStream());
+            outputStream.flush();
             this.inputStream = new ObjectInputStream(socket.getInputStream());
             new Thread(this).start();
         } catch (IOException e) {
@@ -57,30 +58,33 @@ public class ConnectionHandler implements Runnable {
 
                     // send ok to the connecting player
                     UUID newId = UUID.randomUUID();
+                    String name = inputStream.readUTF();
                     sendLoginConfirmation(
                             newId, // player id
+                            name,
                             200, // new player x coordinate
                             200, // new player y coordinate
                             KitchenServer.getInstance().getFieldDimension().width, // field width
                             KitchenServer.getInstance().getFieldDimension().height, // field height
                             Util.serializePlayerList(KitchenServer.getInstance().getPlayers()),
-                            KitchenServer.getInstance().getGame().getCurrentLives()
+                            KitchenServer.getInstance().getGame() != null
+                                    ? KitchenServer.getInstance().getGame().getCurrentLives() : 0
                     );
 
                     // send info to all other players
                     broadcastNewPlayerArrival(
                             newId, // player id
+                            name, // the player name
                             200, // new player x coordinate
                             200 // new player y coordinate
                     );
-                    KitchenServer.getInstance().addPlayer(new Player(newId, 200, 200, Direction.SOUTH));
+                    KitchenServer.getInstance().addPlayer(new Player(newId, name, 200, 200, Direction.SOUTH));
                     KitchenServer.getInstance().log("Login granted");
 
                 } else if (message.equals("MOVE")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     Direction direction = Direction.getDirection(inputStream.readUTF());
                     Player player = KitchenServer.getInstance().getPlayer(id);
-//                    KitchenServer.getInstance().log("Player Move: [" + id.toString() + "] -> " + direction.name());
                     if (player != null) {
                         player.move(direction);
                     }
@@ -97,6 +101,7 @@ public class ConnectionHandler implements Runnable {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     KitchenServer.getInstance().removePlayer(id);
                     KitchenServer.getInstance().getClientConnections().remove(this);
+                    ConnectionHandler.broadcastLogout(id);
                     socket.close();
 
                 } else if (message.equals("READY")) {
@@ -121,21 +126,43 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
+
     /**
      * sends a message to a player that a player has arrived
      *
-     * @param id the player id
-     * @param x  his x coordinate
-     * @param y  his y coordinate
+     * @param id   the player id
+     * @param name the players name
+     * @param x    his x coordinate
+     * @param y    his y coordinate
      */
-    public static void broadcastNewPlayerArrival(UUID id, int x, int y) {
+    public static void broadcastNewPlayerArrival(UUID id, String name, int x, int y) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
                     connectionHandler.getOutputStream().writeUTF("NEWPLAYER");
                     connectionHandler.getOutputStream().writeUTF(id.toString());
+                    connectionHandler.getOutputStream().writeUTF(name);
                     connectionHandler.getOutputStream().writeInt(x);
                     connectionHandler.getOutputStream().writeInt(y);
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * broadcasts that a player has quit
+     *
+     * @param id the players id
+     */
+    private static void broadcastLogout(UUID id) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("LOGOUT");
+                    connectionHandler.getOutputStream().writeUTF(id.toString());
                     connectionHandler.getOutputStream().flush();
                 }
             }
@@ -346,7 +373,7 @@ public class ConnectionHandler implements Runnable {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
-                    connectionHandler.getOutputStream().writeUTF("DAMAGE");
+                    connectionHandler.getOutputStream().writeUTF("DRAWDAMAGE");
                     connectionHandler.getOutputStream().flush();
                 }
             }
@@ -358,11 +385,11 @@ public class ConnectionHandler implements Runnable {
     /**
      * forces all clients to draw a success image
      */
-    public static void broadcastSuccess() {
+    public static void broadcastOrderSuccess() {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
-                    connectionHandler.getOutputStream().writeUTF("SUCCESS");
+                    connectionHandler.getOutputStream().writeUTF("DRAWSUCCESS");
                     connectionHandler.getOutputStream().flush();
                 }
             }
@@ -372,13 +399,13 @@ public class ConnectionHandler implements Runnable {
     }
 
     /**
-     * forces all clients to show failure message
+     * forces all clients to show a message in the hint box
      */
-    public static void broadcastGameOver(Game.Message message) {
+    public static void broadcastMessage(Game.Message message) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
-                    connectionHandler.getOutputStream().writeUTF("GAMEOVER_" + message);
+                    connectionHandler.getOutputStream().writeUTF("MESSAGE");
                     connectionHandler.getOutputStream().writeUTF(message.getMessage());
                     connectionHandler.getOutputStream().flush();
                 }
@@ -389,14 +416,16 @@ public class ConnectionHandler implements Runnable {
     }
 
     /**
-     * forces all clients to show success message
+     * broadcasts the current amount of hearts to all players
+     *
+     * @param lives the amount of lives the players have left
      */
-    public static void broadcastSuccess(Game.Message message) {
+    public static void broadcastLives(int lives) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
-                    connectionHandler.getOutputStream().writeUTF("SUCCESS_" + message);
-                    connectionHandler.getOutputStream().writeUTF(message.getMessage());
+                    connectionHandler.getOutputStream().writeUTF("SETHEARTS");
+                    connectionHandler.getOutputStream().writeInt(lives);
                     connectionHandler.getOutputStream().flush();
                 }
             }
@@ -409,6 +438,7 @@ public class ConnectionHandler implements Runnable {
      * sends a login confirmation
      *
      * @param id                   the id the new player is given
+     * @param name                 the player name
      * @param x                    the x coordinate he spawns on
      * @param y                    the y coordinate he spawns on
      * @param width                the width of the playing field
@@ -416,12 +446,13 @@ public class ConnectionHandler implements Runnable {
      * @param serializedPlayerList a serialized list of all players that are currently logged in
      * @param lives                the amount of lives the players have
      */
-    private void sendLoginConfirmation(UUID id, int x, int y, int width, int height,
+    private void sendLoginConfirmation(UUID id, String name, int x, int y, int width, int height,
                                        String serializedPlayerList, int lives) {
         try {
             synchronized (outputStream) {
                 outputStream.writeUTF("LOGINOK");
                 outputStream.writeUTF(id.toString());
+                outputStream.writeUTF(name);
                 outputStream.writeInt(x);
                 outputStream.writeInt(y);
                 outputStream.writeInt(width);

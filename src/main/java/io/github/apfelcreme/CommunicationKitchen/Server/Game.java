@@ -61,10 +61,10 @@ public class Game {
      */
     public void newOrder(long time) {
         Order order;
-        if (Math.random() >= 0) {
-            order = new SyncOrder(UUID.randomUUID(), 2, time, 3000);
+        if (Math.random() >= 0.5) {
+            order = new SyncOrder(UUID.randomUUID(), KitchenServer.getInstance().getPlayers().size(), time, 3000);
         } else {
-            order = new SequenceOrder(UUID.randomUUID(), 4, time);
+            order = new SequenceOrder(UUID.randomUUID(), (int) ((KitchenServer.getInstance().getPlayers().size() + 1) * 1.5), time);
         }
         runningOrders.add(order);
         KitchenServer.getInstance().log("Order-Spawn: " + order.getClass().getName());
@@ -86,6 +86,7 @@ public class Game {
         order.setPot(pot);
         ConnectionHandler.broadcastAddDrawable(pot.getId(), -1, DrawableType.POT, pot.getX(), pot.getY());
         ConnectionHandler.broadcastNewOrder(order);
+        ConnectionHandler.broadcastLives(currentLives);
     }
 
     /**
@@ -131,18 +132,12 @@ public class Game {
      * @param reason     the reason why the game is stopped
      */
     public void stop(GameResult gameResult, Message reason) {
-        if (gameResult == GameResult.FAILURE) {
-            ConnectionHandler.broadcastGameOver(reason);
-        } else {
-            ConnectionHandler.broadcastSuccess(reason);
-        }
+        ConnectionHandler.broadcastMessage(reason);
         if (task != null) {
             task.cancel();
         }
-
         KitchenServer.getInstance().log("Stop game due to " + gameResult.name()
                 + ". FailureReason: " + reason);
-
     }
 
     /**
@@ -151,11 +146,11 @@ public class Game {
      * @param reason - the reason for failing
      */
     public void handleFailure(Message reason) {
-
+        if (failedOrders.size() == 0) {
+            ConnectionHandler.broadcastMessage(reason);
+        }
         currentLives--;
-        KitchenServer.getInstance().log("################");
-        KitchenServer.getInstance().log("NOCH " + currentLives + " LEBEN");
-        KitchenServer.getInstance().log("################");
+        ConnectionHandler.broadcastLives(currentLives);
         ConnectionHandler.broadcastDamage();
         if (currentLives <= 0) {
             stop(GameResult.FAILURE, reason);
@@ -170,21 +165,13 @@ public class Game {
      * @param winMessage - the learned skill
      */
     public void handleSuccess(Message winMessage) {
-
         currentRound++;
-        KitchenServer.getInstance().log("#######");
-        KitchenServer.getInstance().log("RUNDE " + currentRound);
-        KitchenServer.getInstance().log("#######");
-        ConnectionHandler.broadcastSuccess();
-
+        ConnectionHandler.broadcastOrderSuccess();
         if (currentRound >= numberOfRounds) {
             stop(GameResult.SUCCESS, winMessage);
         } else {
             newOrder(timePerOrder);
         }
-
-        KitchenServer.getInstance().log(winMessage.getMessage());
-
     }
 
     /**

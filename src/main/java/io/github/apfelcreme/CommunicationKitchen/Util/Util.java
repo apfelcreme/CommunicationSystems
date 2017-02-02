@@ -40,8 +40,9 @@ public class Util {
             for (String player : s.split(Pattern.quote("|"))) {
                 drawablePlayers.add(new DrawablePlayer(
                         UUID.fromString(player.split(",")[0]),
-                        Integer.valueOf(player.split(",")[1]),
-                        Integer.valueOf(player.split(",")[2])
+                        player.split(",")[1],
+                        Integer.valueOf(player.split(",")[2]),
+                        Integer.valueOf(player.split(",")[3])
                 ));
             }
         }
@@ -57,7 +58,7 @@ public class Util {
     public static String serializePlayerList(List<Player> players) {
         String ret = "";
         for (Player player : players) {
-            ret += player.getId() + "," + player.getX() + "," + player.getY() + "|";
+            ret += player.getId() + "," + player.getName() + "," + player.getX() + "," + player.getY() + "|";
         }
         return ret;
     }
@@ -73,7 +74,7 @@ public class Util {
      * @return true or false
      */
     public static boolean arePositionsEqual(int x1, int y1, int x2, int y2, int tolerance) {
-        return x1 < x2 + tolerance && x1 > x2 - tolerance && y1 < y2 + tolerance && y1 > y2 - tolerance;
+        return (x1 < (x2 + tolerance)) && (x1 > (x2 - tolerance)) && (y1 < (y2 + tolerance)) && (y1 > (y2 - tolerance));
     }
 
 }

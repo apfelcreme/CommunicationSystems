@@ -32,14 +32,16 @@ import java.util.*;
 public class Player {
 
     private UUID id;
+    private String name;
     private int x;
     private int y;
     private Direction direction;
     private Ingredient carrying;
     private boolean ready = false;
 
-    public Player(UUID id, int x, int y, Direction direction) {
+    public Player(UUID id, String name, int x, int y, Direction direction) {
         this.id = id;
+        this.name = name;
         this.x = x;
         this.y = y;
         this.direction = direction;
@@ -180,6 +182,7 @@ public class Player {
                             ConnectionHandler.broadcastRemovalFromHand(id);
                         } else {
                             queueOrder.remove(Order.Result.FAILED, Game.Message.FAIL_SEQUENCE);
+                            return;
                         }
 
                     /*
@@ -209,11 +212,6 @@ public class Player {
                 && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)) {
             Game.Message reason = order instanceof SequenceOrder ? Game.Message.WIN_SEQUENCE : Game.Message.WIN_SYNC;
             order.remove(Order.Result.SUCCESS, reason);
-            if (order instanceof SequenceOrder) {
-                KitchenServer.getInstance().getGame().handleSuccess(Game.Message.WIN_SEQUENCE);
-            } else if (order instanceof SyncOrder) {
-                KitchenServer.getInstance().getGame().handleSuccess(Game.Message.WIN_SYNC);
-            }
         }
     }
 
@@ -285,6 +283,15 @@ public class Player {
     }
 
     /**
+     * returns the players name
+     *
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
      * returns the players x coordinate
      *
      * @return the players x coordinate
@@ -338,18 +345,23 @@ public class Player {
         this.carrying = carrying;
     }
 
-	/**
-	 * @return the ready
-	 */
-	public boolean isReady() {
-		return ready;
-	}
+    /**
+     * @return the ready
+     */
+    public boolean isReady() {
+        return ready;
+    }
 
-	/**
-	 * @param ready the ready to set
-	 */
-	public void setReady(boolean ready) {
-		this.ready = ready;
-	}
+    /**
+     * @param ready the ready to set
+     */
+    public void setReady(boolean ready) {
+        this.ready = ready;
+    }
+
+    @Override
+    public String toString() {
+        return name + "(" + (ready ? "bereit" : "nicht bereit") + ")";
+    }
 
 }

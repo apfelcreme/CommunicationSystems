@@ -39,9 +39,8 @@ public class HeartBoard extends JLabel {
 
     private HeartBoard() {
         try {
-            this.setBackground(new Color(47, 47, 47));
-            heartImage = (BufferedImage) ImageIO.read(OrderBoard.class.getResourceAsStream("/heart.png"))
-                    .getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+            setVisible(true);
+            heartImage = ImageIO.read(OrderBoard.class.getResourceAsStream("/heart.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -50,8 +49,12 @@ public class HeartBoard extends JLabel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        for (int x = 10; x < CommunicationKitchen.getInstance().getHearts() * heartImage.getWidth(); x+= heartImage.getWidth()) {
-            g.drawImage(heartImage, x, 5, null);
+        g.setColor(new Color(47, 47, 47));
+        g.fillRect(0, 0, getSize().width, getSize().height);
+        g.setColor(new Color(200, 200, 200));
+        g.drawString("Runde " + CommunicationKitchen.getInstance().getRound(), 0, 12);
+        for (int x = 0; x < CommunicationKitchen.getInstance().getHearts(); x++) {
+            g.drawImage(heartImage.getScaledInstance(15, 15, Image.SCALE_SMOOTH), CommunicationKitchen.getInstance().getSize().width - 65 - x * 15, 10, null);
         }
     }
 

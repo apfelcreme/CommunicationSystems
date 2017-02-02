@@ -4,13 +4,14 @@ import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.Drawable;
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawableOrder;
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePlayer;
 import io.github.apfelcreme.CommunicationKitchen.Client.UI.DrawingBoard;
+import io.github.apfelcreme.CommunicationKitchen.Client.UI.HeartBoard;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
+import javax.swing.*;
 import java.io.*;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -54,15 +55,22 @@ public class ServerConnector implements Runnable {
     private ServerConnector() {
     }
 
-    public void connect(String ip, int port) throws IOException {
+    public void connect(String ip, int port, String name) throws IOException {
         try {
             socket = null;
-            this.socket = new Socket(ip, port);
+            this.socket = new Socket();
+            socket.connect(new InetSocketAddress(ip, port));
             this.outputStream = new ObjectOutputStream(socket.getOutputStream());
+            outputStream.flush();
             this.inputStream = new ObjectInputStream(socket.getInputStream());
             System.out.println("Login läuft...");
-            send("LOGIN");
+            sendLogin(name);
             new Thread(this).start();
+        } catch (ConnectException e) {
+            JOptionPane.showMessageDialog(CommunicationKitchen.getInstance(),
+                    "WARNING.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -160,13 +168,14 @@ public class ServerConnector implements Runnable {
     }
 
     /**
-     * sends a message to the server
+     * sends a login message to the server
      *
-     * @param message the message
+     * @param name the player name
      */
-    public void send(String message) {
+    public void sendLogin(String name) {
         try {
-            outputStream.writeUTF(message);
+            outputStream.writeUTF("LOGIN");
+            outputStream.writeUTF(name);
             outputStream.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -184,7 +193,7 @@ public class ServerConnector implements Runnable {
 
                 if (message.equals("LOGINOK")) {
                     DrawablePlayer player = new DrawablePlayer(UUID.fromString(inputStream.readUTF()),
-                            inputStream.readInt(), inputStream.readInt());
+                            inputStream.readUTF(), inputStream.readInt(), inputStream.readInt());
                     CommunicationKitchen.getInstance().setMe(player.getId());
                     CommunicationKitchen.getInstance().getDrawables().add(player);
                     int w = inputStream.readInt();
@@ -192,7 +201,7 @@ public class ServerConnector implements Runnable {
                     CommunicationKitchen.getInstance().getDrawables()
                             .addAll(Util.deserializePlayerList(inputStream.readUTF()));
                     CommunicationKitchen.getInstance().setHearts(inputStream.readInt());
-                    CommunicationKitchen.getInstance().setSize(w + 25, h + 250);
+                    CommunicationKitchen.getInstance().setSize(w + 40, h + 250);
                     DrawingBoard.getInstance().setSize(w, h);
                     CommunicationKitchen.getInstance().setVisible(true);
                     DrawingBoard.getInstance().requestFocus();
@@ -200,12 +209,20 @@ public class ServerConnector implements Runnable {
 
                 } else if (message.equals("NEWPLAYER")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
+                    String name = inputStream.readUTF();
                     int x = inputStream.readInt();
                     int y = inputStream.readInt();
                     if (!CommunicationKitchen.getInstance().getMe().equals(id)) {
                         CommunicationKitchen.getInstance().getDrawables().add(
-                                new DrawablePlayer(id, x, y));
+                                new DrawablePlayer(id, name, x, y));
                         DrawingBoard.getInstance().repaint();
+                    }
+
+                } else if (message.equals("LOGOUT")) {
+                    UUID id = UUID.fromString(inputStream.readUTF());
+                    DrawablePlayer drawablePlayer = CommunicationKitchen.getInstance().getDrawablePlayer(id);
+                    if (drawablePlayer != null) {
+                        CommunicationKitchen.getInstance().removeDrawablePlayer(id);
                     }
 
                 } else if (message.equals("MOVE")) {
@@ -267,6 +284,7 @@ public class ServerConnector implements Runnable {
                     }
                     CommunicationKitchen.getInstance().getOrders().add(
                             new DrawableOrder(id, type, 0, 0, time, ingredientIds));
+                    CommunicationKitchen.getInstance().setRound(CommunicationKitchen.getInstance().getRound() + 1);
 
                 } else if (message.equals("REMOVEORDER")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
@@ -278,35 +296,19 @@ public class ServerConnector implements Runnable {
                     if (drawableOrder != null) {
                         drawableOrder.setTimeNewLimit(inputStream.readLong());
                     }
-                } else if (message.equals("DAMAGE")) {
+                } else if (message.equals("DRAWDAMAGE")) {
                     DrawingBoard.getInstance().setDrawDamageOnNextTick(true);
 
-                } else if (message.equals("SUCCESS")) {
+                } else if (message.equals("DRAWSUCCESS")) {
                     DrawingBoard.getInstance().setDrawSuccessOnNextTick(true);
 
                 } else if (message.equals("SETHEARTS")) {
                     CommunicationKitchen.getInstance().setHearts(inputStream.readInt());
+                    HeartBoard.getInstance().repaint();
 
-                } else if (message.equals("GAMEOVER_TIME")) {                                        
+                } else if (message.equals("MESSAGE")) {
                     CommunicationKitchen.getInstance().setMessage(inputStream.readUTF());
-                    
-                } else if (message.equals("GAMEOVER_SEQUENCE")) {                                        
-                    CommunicationKitchen.getInstance().setMessage(inputStream.readUTF());
-                    
-                } else if (message.equals("GAMEOVER_SYNC")) {                                        
-                    CommunicationKitchen.getInstance().setMessage(inputStream.readUTF());
-                    
                 }
-                else if (message.equals("SUCCESS_TIME")) {                                        
-                    CommunicationKitchen.getInstance().setMessage("You win! (Time)");
-                    
-                } else if (message.equals("SUCCESS_SEQUENCE")) {                                        
-                    CommunicationKitchen.getInstance().setMessage("You win! (Sequence)");
-                    
-                } else if (message.equals("SUCCESS_SYNC")) {                                        
-                    CommunicationKitchen.getInstance().setMessage("You win! (Synchronous)");
-                    
-                }             
 
             }
         } catch (UTFDataFormatException e) {
