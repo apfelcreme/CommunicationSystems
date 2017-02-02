@@ -35,7 +35,7 @@ public class Player {
     private int y;
     private Direction direction;
     private Ingredient carrying;
-    private boolean ready;
+    private boolean ready = false;
 
     public Player(UUID id, int x, int y, Direction direction) {
         this.id = id;
@@ -176,7 +176,13 @@ public class Player {
                             this.carrying = null;
                             ConnectionHandler.broadcastRemovalFromHand(id);
                         } else {
-                            queueOrder.remove(Order.Result.FAILED);
+                            order.remove();
+                            order.cancel();
+                            KitchenServer.getInstance().log("Die Bestellung" + order.getId()
+                                    + " ist fehlgeschlagen!");
+                            //ConnectionHandler.broadcastDamage();
+                            KitchenServer.getInstance().handleFailure("SEQUENCE");
+                            orderCancelled = true;
                         }
 
                     /*
@@ -201,10 +207,19 @@ public class Player {
             }
         }
 
-        // was an order completed successfully?
-        if ((order.getIngredients(Ingredient.Status.MISSING).size() == 0)
-                && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)) {
-            order.remove(Order.Result.SUCCESS);
+            // was an order completed successfully?
+            if ((order.getIngredients(Ingredient.Status.MISSING).size() == 0)
+                    && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)
+                    && !orderCancelled) {
+                KitchenServer.getInstance().log(getId().toString() + " hat Bestellung " + order.getId()
+                        + " erfolgreich beendet");
+                order.cancel();
+                order.remove();
+                it.remove();
+                // TODO: Give the correct reason for succeeding. 
+                // We first have to develop a concept, e.g. 1st level: time, 2nd level: sequence, 3rd level: synchronous, 4th level: mixed
+                KitchenServer.getInstance().handleSuccess("TIME");
+            }
         }
     }
 
@@ -350,21 +365,18 @@ public class Player {
         this.carrying = carrying;
     }
 
-    /**
-     * sets this players status
-     *
-     * @param ready ready or not ready
-     */
-    public void setReady(boolean ready) {
-        this.ready = ready;
-    }
+	/**
+	 * @return the ready
+	 */
+	public boolean isReady() {
+		return ready;
+	}
 
-    /**
-     * is the player ready?
-     *
-     * @return true or false
-     */
-    public boolean isReady() {
-        return ready;
-    }
+	/**
+	 * @param ready the ready to set
+	 */
+	public void setReady(boolean ready) {
+		this.ready = ready;
+	}
+
 }
