@@ -92,21 +92,6 @@ public class ServerConnector implements Runnable {
             e.printStackTrace();
         }
     }
-
-    /**
-     * sends a message to let the server know that the player is ready
-     *
-     * @param id me (the player who is ready to play)
-     */
-    public void sendPlayerReady(UUID id) {
-        try {
-            outputStream.writeUTF("READY");
-            outputStream.writeUTF(id.toString());
-            outputStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
   
     /**
      * sends a move request to the server
@@ -206,8 +191,8 @@ public class ServerConnector implements Runnable {
                     int h = inputStream.readInt();
                     CommunicationKitchen.getInstance().getDrawables()
                             .addAll(Util.deserializePlayerList(inputStream.readUTF()));
-
-                    CommunicationKitchen.getInstance().setSize(w + 10, h + 210);
+                    CommunicationKitchen.getInstance().setHearts(inputStream.readInt());
+                    CommunicationKitchen.getInstance().setSize(w + 25, h + 250);
                     DrawingBoard.getInstance().setSize(w, h);
                     CommunicationKitchen.getInstance().setVisible(true);
                     DrawingBoard.getInstance().requestFocus();
@@ -294,19 +279,24 @@ public class ServerConnector implements Runnable {
                         drawableOrder.setTimeNewLimit(inputStream.readLong());
                     }
                 } else if (message.equals("DAMAGE")) {
-                    DrawingBoard.getInstance().setDrawDamageOnNextTick(true);                                       
-                    
+                    DrawingBoard.getInstance().setDrawDamageOnNextTick(true);
+
+                } else if (message.equals("SUCCESS")) {
+                    DrawingBoard.getInstance().setDrawSuccessOnNextTick(true);
+
+                } else if (message.equals("SETHEARTS")) {
+                    CommunicationKitchen.getInstance().setHearts(inputStream.readInt());
+
                 } else if (message.equals("GAMEOVER_TIME")) {                                        
-                    CommunicationKitchen.getInstance().setMessage("Leider ist die Zeit abgelaufen! Um die vielen Zutaten in der kurzen Zeit einzusammeln und im Kochtopf zu platzieren, ist es wichtig, dass du dich mit deinen Mitspielern abstimmst! Insbesondere solltet ihr euch darauf einigen, wer welche Zutaten einsammelt. Du kannst daf�r den Chat nutzen!");
+                    CommunicationKitchen.getInstance().setMessage(inputStream.readUTF());
                     
                 } else if (message.equals("GAMEOVER_SEQUENCE")) {                                        
-                    CommunicationKitchen.getInstance().setMessage("Die Reihenfolge der Zutaten stimmt nicht! Nutze den Chat, um mit deinen Mitspielern zu besprechen, wer welche Zutaten zu welcher Zeit in den Kochtopf gibt.");
+                    CommunicationKitchen.getInstance().setMessage(inputStream.readUTF());
                     
                 } else if (message.equals("GAMEOVER_SYNC")) {                                        
-                    CommunicationKitchen.getInstance().setMessage("Leider habt ihr die Zutaten nicht schnell genug hintereinander in den Kochtopf gegeben.");
+                    CommunicationKitchen.getInstance().setMessage(inputStream.readUTF());
                     
-                } 
-                // TODO: Change messages when they're final
+                }
                 else if (message.equals("SUCCESS_TIME")) {                                        
                     CommunicationKitchen.getInstance().setMessage("You win! (Time)");
                     

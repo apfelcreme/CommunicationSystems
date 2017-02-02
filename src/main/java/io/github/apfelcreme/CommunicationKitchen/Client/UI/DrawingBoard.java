@@ -33,7 +33,9 @@ public class DrawingBoard extends JPanel {
     private static DrawingBoard instance = null;
 
     private boolean drawDamageOnNextTick = false;
+    private boolean drawSuccessOnNextTick = false;
     private BufferedImage damageImage;
+    private BufferedImage successImage;
     private BufferedImage floorImage;
 
     public static DrawingBoard getInstance() {
@@ -53,6 +55,7 @@ public class DrawingBoard extends JPanel {
         }, 0, 100);
         try {
             damageImage = ImageIO.read(this.getClass().getResourceAsStream("/damage.png"));
+            successImage = ImageIO.read(this.getClass().getResourceAsStream("/success.png"));
             floorImage = ImageIO.read(this.getClass().getResourceAsStream("/floortile_small.png"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -86,9 +89,19 @@ public class DrawingBoard extends JPanel {
 
         if (drawDamageOnNextTick) {
             g.drawImage(damageImage, 0, 0, null);
-//            drawDamageOnNextTick = false;
         }
 
+        if (drawSuccessOnNextTick) {
+            g.drawImage(successImage, 0, 0, null);
+        }
+    }
+
+    private void setDrawDamage(boolean drawDamage) {
+        this.drawDamageOnNextTick = drawDamage;
+    }
+
+    private void setDrawSuccess(boolean drawSuccess) {
+        this.drawSuccessOnNextTick = drawSuccess;
     }
 
     /**
@@ -106,7 +119,18 @@ public class DrawingBoard extends JPanel {
         }, 200);
     }
 
-    private void setDrawDamage(boolean drawDamage) {
-        this.drawDamageOnNextTick = drawDamage;
+    /**
+     * make the drawing board draw the success frame on the next tick
+     *
+     * @param drawSuccessOnNextTick true or false
+     */
+    public void setDrawSuccessOnNextTick(final boolean drawSuccessOnNextTick) {
+        this.drawSuccessOnNextTick = drawSuccessOnNextTick;
+        new java.util.Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                setDrawSuccess(false);
+            }
+        }, 200);
     }
 }

@@ -3,8 +3,8 @@ package io.github.apfelcreme.CommunicationKitchen.Server;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 import io.github.apfelcreme.CommunicationKitchen.Server.Order.Order;
-import io.github.apfelcreme.CommunicationKitchen.Server.Order.QueueOrder;
-import io.github.apfelcreme.CommunicationKitchen.Server.Order.TimeOrder;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.SequenceOrder;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.SyncOrder;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
@@ -63,7 +63,8 @@ public class ConnectionHandler implements Runnable {
                             200, // new player y coordinate
                             KitchenServer.getInstance().getFieldDimension().width, // field width
                             KitchenServer.getInstance().getFieldDimension().height, // field height
-                            Util.serializePlayerList(KitchenServer.getInstance().getPlayers())
+                            Util.serializePlayerList(KitchenServer.getInstance().getPlayers()),
+                            KitchenServer.getInstance().getGame().getCurrentLives()
                     );
 
                     // send info to all other players
@@ -112,12 +113,7 @@ public class ConnectionHandler implements Runnable {
                     String chat = inputStream.readUTF();
                     KitchenServer.getInstance().log("Chat-Message from [" + id + "]: " + chat);
                     broadcastChatMessage(id, chat);
-                    
-                } else if (message.equals("READY")) {
-                    UUID id = UUID.fromString(inputStream.readUTF());                    
-                    KitchenServer.getInstance().log("Player [" + id + "] is ready");
-                    KitchenServer.getInstance().getPlayer(id).setReady(true);
-                    KitchenServer.getInstance().startGame();
+
                 }
             }
         } catch (IOException e) {
@@ -245,7 +241,7 @@ public class ConnectionHandler implements Runnable {
                 synchronized (connectionHandler.getOutputStream()) {
                     connectionHandler.getOutputStream().writeUTF("ADDORDER");
                     connectionHandler.getOutputStream().writeUTF(order.getId().toString());
-                    connectionHandler.getOutputStream().writeUTF(order instanceof QueueOrder ? "QUEUEORDER" : "TIMEORDER");
+                    connectionHandler.getOutputStream().writeUTF(order instanceof SequenceOrder ? "SEQUENCEORDER" : "SYNCORDER");
                     connectionHandler.getOutputStream().writeLong(order.getTime());
                     String ingredients = "";
                     for (Ingredient ingredient : order.getIngredients(Ingredient.Status.MISSING)) {
@@ -283,15 +279,15 @@ public class ConnectionHandler implements Runnable {
     /**
      * broadcasts a message that a countdown for a time order has begun
      *
-     * @param timeOrder the order
+     * @param syncOrder the order
      */
-    public static void broadcastTimerStart(TimeOrder timeOrder) {
+    public static void broadcastTimerStart(SyncOrder syncOrder) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
                     connectionHandler.getOutputStream().writeUTF("TIMEORDERSTART");
-                    connectionHandler.getOutputStream().writeUTF(timeOrder.getId().toString());
-                    connectionHandler.getOutputStream().writeLong(timeOrder.getTimeFrame());
+                    connectionHandler.getOutputStream().writeUTF(syncOrder.getId().toString());
+                    connectionHandler.getOutputStream().writeLong(syncOrder.getTimeFrame());
                     connectionHandler.getOutputStream().flush();
                 }
             }
@@ -358,15 +354,15 @@ public class ConnectionHandler implements Runnable {
             e.printStackTrace();
         }
     }
-    
+
     /**
-     * forces all clients to show failure message
+     * forces all clients to draw a success image
      */
-    public static void broadcastGameOver(String reason) {
+    public static void broadcastSuccess() {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
-                    connectionHandler.getOutputStream().writeUTF("GAMEOVER_" + reason);
+                    connectionHandler.getOutputStream().writeUTF("SUCCESS");
                     connectionHandler.getOutputStream().flush();
                 }
             }
@@ -374,15 +370,33 @@ public class ConnectionHandler implements Runnable {
             e.printStackTrace();
         }
     }
-    
+
     /**
-     * forces all clients to show success message
+     * forces all clients to show failure message
      */
-    public static void broadcastSuccess(String reason) {
+    public static void broadcastGameOver(Game.Message message) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
-                    connectionHandler.getOutputStream().writeUTF("SUCCESS_" + reason);
+                    connectionHandler.getOutputStream().writeUTF("GAMEOVER_" + message);
+                    connectionHandler.getOutputStream().writeUTF(message.getMessage());
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * forces all clients to show success message
+     */
+    public static void broadcastSuccess(Game.Message message) {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("SUCCESS_" + message);
+                    connectionHandler.getOutputStream().writeUTF(message.getMessage());
                     connectionHandler.getOutputStream().flush();
                 }
             }
@@ -400,9 +414,10 @@ public class ConnectionHandler implements Runnable {
      * @param width                the width of the playing field
      * @param height               the height of the playing field
      * @param serializedPlayerList a serialized list of all players that are currently logged in
+     * @param lives                the amount of lives the players have
      */
     private void sendLoginConfirmation(UUID id, int x, int y, int width, int height,
-                                       String serializedPlayerList) {
+                                       String serializedPlayerList, int lives) {
         try {
             synchronized (outputStream) {
                 outputStream.writeUTF("LOGINOK");
@@ -412,6 +427,7 @@ public class ConnectionHandler implements Runnable {
                 outputStream.writeInt(width);
                 outputStream.writeInt(height);
                 outputStream.writeUTF(serializedPlayerList);
+                outputStream.writeInt(lives);
                 outputStream.flush();
             }
         } catch (IOException e) {

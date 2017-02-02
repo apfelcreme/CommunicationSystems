@@ -54,6 +54,8 @@ import java.util.Timer;
 
 public class CommunicationKitchen extends JFrame {
 
+    private static CommunicationKitchen instance = null;
+
     private Vector<Drawable> drawables = new Vector<Drawable>();
 
     private Vector<DrawableOrder> orders = new Vector<DrawableOrder>();
@@ -61,10 +63,9 @@ public class CommunicationKitchen extends JFrame {
     private Set<Integer> keysPressed;
 
     private UUID me = null;
-    private static CommunicationKitchen instance = null;
+    private int hearts;
 
     private JTextField chat = new JTextField("Chat");
-    private JButton bSend = new JButton("Send");
     private JPanel messagePanel;
     private JTextArea hintBox = new JTextArea();
     private JToggleButton bnReady = new JToggleButton();
@@ -100,13 +101,21 @@ public class CommunicationKitchen extends JFrame {
         chat.setForeground(Color.WHITE);
         chat.setBorder(BorderFactory.createEmptyBorder());
 
+        JButton bnSend = new JButton("Send");
+        bnSend.setBackground(new Color(47, 47, 47));
+        bnSend.setBorder(BorderFactory.createEmptyBorder());
+        bnSend.setFocusPainted(false);
+
         JPanel chatBg = new JPanel();
         chatBg.setLayout(new GridBagLayout());
         chatBg.add(chat, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                 GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                 new Insets(3, 0, 3, 0), 0, 0));
+        chatBg.add(bnSend, new GridBagConstraints(1, 0, 1, 1, 0.0, 1.0,
+                GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                new Insets(3, 0, 3, 0), 0, 0));
         chatBg.setBackground(new Color(47, 47, 47));
-        
+
         hintBox.setLineWrap(true);
         hintBox.setWrapStyleWord(true);
         hintBox.setBackground(new Color(67, 67, 67));
@@ -117,9 +126,6 @@ public class CommunicationKitchen extends JFrame {
         messagePanel.add(hintBox, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                 GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                 new Insets(3, 0, 3, 0), 0, 0));
-        messagePanel.add(bnConfirm, new GridBagConstraints(0, 1, 1, 1, 0, 0,
-        		GridBagConstraints.NORTH, GridBagConstraints.NONE,
-        		new Insets(3, 0, 3, 0), 0, 0));
         messagePanel.setBackground(new Color(47, 47, 47));
 
         bnReady.setIcon(new ImageIcon(ImageIO.read(getClass().getResourceAsStream("/ready.png"))));
@@ -186,7 +192,7 @@ public class CommunicationKitchen extends JFrame {
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(messagePanel,
-                new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0,
+                new GridBagConstraints(1, 3, 1, 1, 1.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
                         new Insets(0, 0, 0, 0), 0, 0));
         this.getContentPane().add(chatBg,
@@ -231,7 +237,7 @@ public class CommunicationKitchen extends JFrame {
                 System.exit(0);
             }
         });
-        bSend.addActionListener(new ActionListener() {
+        bnSend.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ServerConnector.getInstance().sendChatMessage(me, chat.getText());
                 chat.setText("");
@@ -243,12 +249,14 @@ public class CommunicationKitchen extends JFrame {
                 ServerConnector.getInstance().sendReady(me, bnReady.isSelected());
                 messagePanel.setVisible(false);
                 DrawingBoard.getInstance().setVisible(true);
-                DrawingBoard.getInstance().requestFocus();                
+                DrawingBoard.getInstance().requestFocus();
             }
         });
         this.setSize(new Dimension(width, height));
         DrawingBoard.getInstance().requestFocus();
+
         setMessage("SPIELANLEITUNG");
+
     }
 
     /**
@@ -378,6 +386,36 @@ public class CommunicationKitchen extends JFrame {
     }
 
     /**
+     * sets the hintbox's message
+     *
+     * @param message the message
+     */
+    public void setMessage(String message) {
+        hintBox.setText(message);
+        DrawingBoard.getInstance().setVisible(false);
+        messagePanel.setVisible(true);
+        bnReady.requestFocusInWindow();
+    }
+
+    /**
+     * sets the amount of hearts the player has
+     *
+     * @param hearts the new amount of hearts
+     */
+    public void setHearts(int hearts) {
+        this.hearts = hearts;
+    }
+
+    /**
+     * returns the amount of hearts the players have
+     *
+     * @return the amount of hearts the players have
+     */
+    public int getHearts() {
+        return hearts;
+    }
+
+    /**
      * initializes all key events
      */
     public void initKeys() {
@@ -478,39 +516,33 @@ public class CommunicationKitchen extends JFrame {
         if (!keysPressed.isEmpty()) {
             if (keysPressed.contains(KeyEvent.VK_W)) {
                 if (keysPressed.contains(KeyEvent.VK_A)) {
-                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.NORTH_WEST);
+                    ServerConnector.getInstance().sendPlayerMove(me, Direction.NORTH_WEST);
                 } else if (keysPressed.contains(KeyEvent.VK_D)) {
-                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.NORTH_EAST);
+                    ServerConnector.getInstance().sendPlayerMove(me, Direction.NORTH_EAST);
                 } else {
-                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.NORTH);
+                    ServerConnector.getInstance().sendPlayerMove(me, Direction.NORTH);
                 }
             } else if (keysPressed.contains(KeyEvent.VK_S)) {
                 if (keysPressed.contains(KeyEvent.VK_A)) {
-                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.SOUTH_WEST);
+                    ServerConnector.getInstance().sendPlayerMove(me, Direction.SOUTH_WEST);
                 } else if (keysPressed.contains(KeyEvent.VK_D)) {
-                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.SOUTH_EAST);
+                    ServerConnector.getInstance().sendPlayerMove(me, Direction.SOUTH_EAST);
                 } else {
-                    ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.SOUTH);
+                    ServerConnector.getInstance().sendPlayerMove(me, Direction.SOUTH);
                 }
             } else if (keysPressed.contains(KeyEvent.VK_A)) {
-                ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.WEST);
+                ServerConnector.getInstance().sendPlayerMove(me, Direction.WEST);
             } else if (keysPressed.contains(KeyEvent.VK_D)) {
-                ServerConnector.getInstance().sendPlayerMove(CommunicationKitchen.getInstance().getMe(), Direction.EAST);
+                ServerConnector.getInstance().sendPlayerMove(me, Direction.EAST);
+            } else if (keysPressed.contains(KeyEvent.VK_SPACE)) {
+                ServerConnector.getInstance().sendItemDrop(me);
+            } else if (keysPressed.contains(KeyEvent.VK_ENTER)) {
+                ServerConnector.getInstance().sendChatMessage(me, chat.getText());
             }
         }
     }
 
     /**
-	 * @return the hintBox
-	 */
-	public void setMessage(String message) {
-		hintBox.setText(message);
-		DrawingBoard.getInstance().setVisible(false);
-		messagePanel.setVisible(true);
-		bnConfirm.requestFocusInWindow();
-	}
-
-	/**
      * returns the client instance
      *
      * @return the client instance

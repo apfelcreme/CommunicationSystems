@@ -37,8 +37,8 @@ public class OrderBoard extends JLabel {
 
     private OrderBoard() {
         try {
-        BufferedImage image = ImageIO.read(OrderBoard.class.getResourceAsStream("/orderbar2.png"));
-        setSize(image.getWidth(), image.getHeight());
+            BufferedImage image = ImageIO.read(OrderBoard.class.getResourceAsStream("/orderbar2.png"));
+            setSize(image.getWidth(), image.getHeight());
             this.setIcon(new ImageIcon(image));
         } catch (IOException e) {
             e.printStackTrace();
@@ -61,9 +61,9 @@ public class OrderBoard extends JLabel {
                 for (DrawableOrder order : CommunicationKitchen.getInstance().getOrders()) {
                     int i = 25;
                     BufferedImage typeImage = null;
-                    if (order.getType().equals("QUEUEORDER")) {
+                    if (order.getType().equals("SEQUENCEORDER")) {
                         typeImage = ImageIO.read(OrderBoard.class.getResourceAsStream("/checklist.png"));
-                    } else if (order.getType().equals("TIMEORDER")) {
+                    } else if (order.getType().equals("SYNCORDER")) {
                         typeImage = ImageIO.read(OrderBoard.class.getResourceAsStream("/clock.png"));
                     }
                     if (typeImage != null) {
@@ -71,11 +71,14 @@ public class OrderBoard extends JLabel {
                     }
                     for (Drawable drawable : order.getIngredients()) {
                         g.drawImage(drawable.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH), i, o, null);
-                        g.drawString(Integer.toString(drawable.getQueuePos()), i + 10, o + 25);
+                        if (drawable.getQueuePos() > 0) {
+                            g.drawString(Integer.toString(drawable.getQueuePos()), i + 10, o + 25);
+                        }
                         i += 25;
                     }
                     g.setColor(Color.BLACK);
-                    g.drawString(new SimpleDateFormat("ss").format(new Date(order.getTimeCreated() + order.getTimeLimit() - System.currentTimeMillis())), i + 10, o + 17);
+                    g.drawString(new SimpleDateFormat("ss").format(new Date(order.getTimeCreated()
+                            + order.getTimeLimit() - System.currentTimeMillis())), i + 10, o + 17);
                     o += 27;
                 }
             }

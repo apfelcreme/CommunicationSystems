@@ -2,6 +2,7 @@ package io.github.apfelcreme.CommunicationKitchen.Server.Order;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.ConnectionHandler;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
+import io.github.apfelcreme.CommunicationKitchen.Server.Game;
 import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
 
 import java.util.*;
@@ -24,11 +25,11 @@ import java.util.*;
  *
  * @author Lord36 aka Apfelcreme
  */
-public class TimeOrder extends Order {
+public class SyncOrder extends Order {
 
     private long timeFrame;
 
-    public TimeOrder(UUID id, int amount, long time, long timeFrame) {
+    public SyncOrder(UUID id, int amount, long time, long timeFrame) {
         super(id, time);
         this.timeFrame = timeFrame;
 
@@ -64,7 +65,7 @@ public class TimeOrder extends Order {
             public void run() {
                 if ((getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() != 0)
                         || (getIngredients(Ingredient.Status.MISSING).size() != 0)) {
-                    remove(Result.FAILED);
+                    remove(Result.FAILED, Game.Message.FAIL_SYNC);
                 }
             }
         }, timeFrame);

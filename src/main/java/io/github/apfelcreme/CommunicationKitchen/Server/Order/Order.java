@@ -4,6 +4,7 @@ import io.github.apfelcreme.CommunicationKitchen.Server.ConnectionHandler;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
+import io.github.apfelcreme.CommunicationKitchen.Server.Game;
 import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
 
 import java.util.*;
@@ -44,7 +45,7 @@ public abstract class Order extends TimerTask {
      *
      * @param result the result of the order
      */
-    public void remove(Order.Result result) {
+    public void remove(Order.Result result, Game.Message reason) {
         // remove all ingredients from this order that are currently held by players
         for (Player player : KitchenServer.getInstance().getPlayers()) {
             for (Ingredient ingredient : ingredients) {
@@ -59,9 +60,14 @@ public abstract class Order extends TimerTask {
 
         if (result == Result.SUCCESS) {
             KitchenServer.getInstance().log("Bestellung erfolgreich beendet");
+            KitchenServer.getInstance().getGame().getRunningOrders().remove(this);
+            KitchenServer.getInstance().getGame().getSuccessfulOrders().add(this);
+            KitchenServer.getInstance().getGame().handleSuccess(reason);
         } else{
-            ConnectionHandler.broadcastDamage();
             KitchenServer.getInstance().log("Bestellung ist fehlgeschlagen!");
+            KitchenServer.getInstance().getGame().getRunningOrders().remove(this);
+            KitchenServer.getInstance().getGame().getFailedOrders().add(this);
+            KitchenServer.getInstance().getGame().handleFailure(reason);
         }
 
         for (Ingredient ingredient : ingredients) {
@@ -74,8 +80,6 @@ public abstract class Order extends TimerTask {
         ingredients.clear();
 
         this.cancel();
-
-        KitchenServer.getInstance().getGame().getOrders().remove(this);
 
     }
 
@@ -143,9 +147,7 @@ public abstract class Order extends TimerTask {
      */
     @Override
     public void run() {
-        KitchenServer.getInstance().log("Auftrag " + id + " fehlgeschlagen");
-        ConnectionHandler.broadcastDamage();
-        remove(Result.FAILED);
+        remove(Result.FAILED, Game.Message.FAIL_TIME);
     }
 
     /**

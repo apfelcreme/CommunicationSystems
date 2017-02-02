@@ -1,10 +1,11 @@
 package io.github.apfelcreme.CommunicationKitchen.Server.Entities;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.ConnectionHandler;
+import io.github.apfelcreme.CommunicationKitchen.Server.Game;
 import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
 import io.github.apfelcreme.CommunicationKitchen.Server.Order.Order;
-import io.github.apfelcreme.CommunicationKitchen.Server.Order.QueueOrder;
-import io.github.apfelcreme.CommunicationKitchen.Server.Order.TimeOrder;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.SequenceOrder;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.SyncOrder;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
@@ -49,39 +50,41 @@ public class Player {
         if (KitchenServer.getInstance().getGame() == null) {
             return;
         }
-        int maxX = KitchenServer.getInstance().getFieldDimension().width;
-        int maxY = KitchenServer.getInstance().getFieldDimension().height;
+        int minX = 20;
+        int minY = 20;
+        int maxX = KitchenServer.getInstance().getFieldDimension().width - 20;
+        int maxY = KitchenServer.getInstance().getFieldDimension().height - 20;
         switch (direction) {
             case NORTH:
                 y = y - 10;
-                if (y < 0) {
-                    y = 0;
+                if (y < minY) {
+                    y = minY;
                 }
                 setDirection(direction);
                 break;
             case NORTH_WEST:
                 x = x - 7;
                 y = y - 7;
-                if (x < 0) {
-                    x = 0;
+                if (x < minX) {
+                    x = minX;
                 }
-                if (y < 0) {
-                    y = 0;
+                if (y < minY) {
+                    y = minY;
                 }
                 setDirection(direction);
                 break;
             case WEST:
                 x = x - 10;
-                if (x < 0) {
-                    x = 0;
+                if (x < minX) {
+                    x = minX;
                 }
                 setDirection(direction);
                 break;
             case SOUTH_WEST:
                 x = x - 7;
                 y = y + 7;
-                if (x < 0) {
-                    x = 0;
+                if (x < minX) {
+                    x = minX;
                 }
                 if (y > maxY) {
                     y = maxY;
@@ -119,8 +122,8 @@ public class Player {
                 if (x > maxX) {
                     x = maxX;
                 }
-                if (y < 0) {
-                    y = 0;
+                if (y < minY) {
+                    y = minY;
                 }
                 setDirection(direction);
                 break;
@@ -128,7 +131,7 @@ public class Player {
 
         // can the player pickup or deliver an ingredient?
         List<Order> copy = new ArrayList<Order>();
-        copy.addAll(KitchenServer.getInstance().getGame().getOrders());
+        copy.addAll(KitchenServer.getInstance().getGame().getRunningOrders());
         for (Order order : copy) {
             checkForOrderCompletion(order);
         }
@@ -165,9 +168,9 @@ public class Player {
                     /*
                     INSERT THE INGREDIENTS IN THE CORRECT ORDER
                      */
-                    if (order instanceof QueueOrder) {
+                    if (order instanceof SequenceOrder) {
 
-                        QueueOrder queueOrder = (QueueOrder) order;
+                        SequenceOrder queueOrder = (SequenceOrder) order;
 
                         //does the item being carried equal the next required item?
                         if (carrying.equals(queueOrder.getIngredients().get(queueOrder.getNextQueuePosition()))) {
@@ -176,26 +179,20 @@ public class Player {
                             this.carrying = null;
                             ConnectionHandler.broadcastRemovalFromHand(id);
                         } else {
-                            order.remove();
-                            order.cancel();
-                            KitchenServer.getInstance().log("Die Bestellung" + order.getId()
-                                    + " ist fehlgeschlagen!");
-                            //ConnectionHandler.broadcastDamage();
-                            KitchenServer.getInstance().handleFailure("SEQUENCE");
-                            orderCancelled = true;
+                            queueOrder.remove(Order.Result.FAILED, Game.Message.FAIL_SEQUENCE);
                         }
 
                     /*
                     INSERT THE INGREDIENTS IN A SMALL TIME FRAME
                      */
-                    } else if (order instanceof TimeOrder) {
-                        TimeOrder timeOrder = (TimeOrder) order;
-                        for (Ingredient ingredient : timeOrder.getIngredients()) {
+                    } else if (order instanceof SyncOrder) {
+                        SyncOrder syncOrder = (SyncOrder) order;
+                        for (Ingredient ingredient : syncOrder.getIngredients()) {
                             if (ingredient.equals(carrying)) {
 
                                 // if the ingredient is the first that is delivered: start a countdown
-                                if (timeOrder.getIngredients(Ingredient.Status.WAS_DELIVERED).size() == 0) {
-                                    timeOrder.startCountdown();
+                                if (syncOrder.getIngredients(Ingredient.Status.WAS_DELIVERED).size() == 0) {
+                                    syncOrder.startCountdown();
                                 }
                                 ingredient.setStatus(Ingredient.Status.WAS_DELIVERED);
                                 this.carrying = null;
@@ -207,18 +204,15 @@ public class Player {
             }
         }
 
-            // was an order completed successfully?
-            if ((order.getIngredients(Ingredient.Status.MISSING).size() == 0)
-                    && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)
-                    && !orderCancelled) {
-                KitchenServer.getInstance().log(getId().toString() + " hat Bestellung " + order.getId()
-                        + " erfolgreich beendet");
-                order.cancel();
-                order.remove();
-                it.remove();
-                // TODO: Give the correct reason for succeeding. 
-                // We first have to develop a concept, e.g. 1st level: time, 2nd level: sequence, 3rd level: synchronous, 4th level: mixed
-                KitchenServer.getInstance().handleSuccess("TIME");
+        // was an order completed successfully?
+        if ((order.getIngredients(Ingredient.Status.MISSING).size() == 0)
+                && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)) {
+            Game.Message reason = order instanceof SequenceOrder ? Game.Message.WIN_SEQUENCE : Game.Message.WIN_SYNC;
+            order.remove(Order.Result.SUCCESS, reason);
+            if (order instanceof SequenceOrder) {
+                KitchenServer.getInstance().getGame().handleSuccess(Game.Message.WIN_SEQUENCE);
+            } else if (order instanceof SyncOrder) {
+                KitchenServer.getInstance().getGame().handleSuccess(Game.Message.WIN_SYNC);
             }
         }
     }
@@ -228,32 +222,11 @@ public class Player {
      */
     public void dropCarrying() {
         if (carrying != null) {
-            for (Order order : KitchenServer.getInstance().getGame().getOrders()) {
+            for (Order order : KitchenServer.getInstance().getGame().getRunningOrders()) {
                 for (Ingredient ingredient : order.getIngredients()) {
                     if (ingredient.equals(carrying)) {
                         // to which direction shall the ingredient be thrown to?
                         switch (direction) {
-
-//                            case NORTH:
-//                                ingredient.setX(ingredient.getX() - 40);
-//                                ingredient.setY(y);
-//                                break;
-//                            case NORTH_:
-//                                ingredient.setX(ingredient.getX() - 40);
-//                                ingredient.setY(y);
-//                                break;
-//                            case RIGHT:
-//                                ingredient.setX(ingredient.getX() + 40);
-//                                ingredient.setY(y);
-//                                break;
-//                            case UP:
-//                                ingredient.setY(ingredient.getY() - 40);
-//                                ingredient.setX(x);
-//                                break;
-//                            case DOWN:
-//                                ingredient.setY(ingredient.getY() + 40);
-//                                ingredient.setX(x);
-//                                break;
                             case NORTH:
                                 ingredient.setX(x);
                                 ingredient.setY(y - 40);

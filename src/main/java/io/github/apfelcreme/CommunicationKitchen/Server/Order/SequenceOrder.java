@@ -25,9 +25,9 @@ import java.util.UUID;
  *
  * @author Lord36 aka Apfelcreme
  */
-public class QueueOrder extends Order {
+public class SequenceOrder extends Order {
 
-    public QueueOrder(UUID id, int amount, long time) {
+    public SequenceOrder(UUID id, int amount, long time) {
         super(id, time);
 
         // spawn n ingredients

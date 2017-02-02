@@ -3,8 +3,8 @@ package io.github.apfelcreme.CommunicationKitchen.Server;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
 import io.github.apfelcreme.CommunicationKitchen.Server.Order.Order;
-import io.github.apfelcreme.CommunicationKitchen.Server.Order.QueueOrder;
-import io.github.apfelcreme.CommunicationKitchen.Server.Order.TimeOrder;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.SequenceOrder;
+import io.github.apfelcreme.CommunicationKitchen.Server.Order.SyncOrder;
 import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 
 import java.util.*;
@@ -29,24 +29,31 @@ import java.util.*;
  */
 public class Game {
 
-    private int currentLevel = 0;
+    private int currentRound;
+    private int currentLives;
+
+    private int timePerOrder;
+    private int numberOfRounds;
+
+    private TimerTask task = null;
 
     /**
      * a list of all orders
      */
-    private List<Order> orders = new ArrayList<Order>();
+    private List<Order> runningOrders = new ArrayList<Order>();
+    private ArrayList<Order> successfulOrders;
+    private ArrayList<Order> failedOrders;
 
-    public Game(final long timeBetweenLevels, final int timePerOrder, final int numberOfOrders) {
-        this.orders = new ArrayList<Order>();
+    public Game(int timePerOrder, int numberOfRounds, int startLives) {
+        this.timePerOrder = timePerOrder;
+        this.numberOfRounds = numberOfRounds;
+        this.currentRound = 0;
+        this.currentLives = startLives;
+        this.runningOrders = new ArrayList<Order>();
+        this.successfulOrders = new ArrayList<Order>();
+        this.failedOrders = new ArrayList<Order>();
         KitchenServer.getInstance().log("Spiel-Start");
-        new Timer().schedule(new TimerTask() {
-            public void run() {
-                if (currentLevel < numberOfOrders) {
-                    newOrder(timePerOrder);
-                    currentLevel++;
-                }
-            }
-        }, 0, timeBetweenLevels);
+        newOrder(timePerOrder);
     }
 
     /**
@@ -54,12 +61,12 @@ public class Game {
      */
     public void newOrder(long time) {
         Order order;
-        if (Math.random() >= 0.5) {
-            order = new TimeOrder(UUID.randomUUID(), 2, time, 3000);
+        if (Math.random() >= 0) {
+            order = new SyncOrder(UUID.randomUUID(), 2, time, 3000);
         } else {
-            order = new QueueOrder(UUID.randomUUID(), 6, time);
+            order = new SequenceOrder(UUID.randomUUID(), 4, time);
         }
-        orders.add(order);
+        runningOrders.add(order);
         KitchenServer.getInstance().log("Order-Spawn: " + order.getClass().getName());
         for (Ingredient ingredient : order.getIngredients()) {
             KitchenServer.getInstance().log("  " + ingredient.getId() + " - "
@@ -86,9 +93,132 @@ public class Game {
      *
      * @return the list of orders
      */
-    public List<Order> getOrders() {
-        return orders;
+    public List<Order> getRunningOrders() {
+        return runningOrders;
     }
 
+    /**
+     * returns the list of successful orders
+     *
+     * @return the list of successful orders
+     */
+    public ArrayList<Order> getSuccessfulOrders() {
+        return successfulOrders;
+    }
+
+    /**
+     * returns the list of failed orders
+     *
+     * @return the list of failed orders
+     */
+    public ArrayList<Order> getFailedOrders() {
+        return failedOrders;
+    }
+
+    /**
+     * return the current lives
+     *
+     * @return the amount of lives the players still have
+     */
+    public int getCurrentLives() {
+        return currentLives;
+    }
+
+    /**
+     * stops the game
+     *
+     * @param gameResult the result of the game
+     * @param reason     the reason why the game is stopped
+     */
+    public void stop(GameResult gameResult, Message reason) {
+        if (gameResult == GameResult.FAILURE) {
+            ConnectionHandler.broadcastGameOver(reason);
+        } else {
+            ConnectionHandler.broadcastSuccess(reason);
+        }
+        if (task != null) {
+            task.cancel();
+        }
+
+        KitchenServer.getInstance().log("Stop game due to " + gameResult.name()
+                + ". FailureReason: " + reason);
+
+    }
+
+    /**
+     * Handles a failure. Stops the game if necessary (no more lives)
+     *
+     * @param reason - the reason for failing
+     */
+    public void handleFailure(Message reason) {
+
+        currentLives--;
+        KitchenServer.getInstance().log("################");
+        KitchenServer.getInstance().log("NOCH " + currentLives + " LEBEN");
+        KitchenServer.getInstance().log("################");
+        ConnectionHandler.broadcastDamage();
+        if (currentLives <= 0) {
+            stop(GameResult.FAILURE, reason);
+        } else {
+            newOrder(timePerOrder);
+        }
+    }
+
+    /**
+     * Handles a success. Stops the game if necessary (all rounds at the current level completed)
+     *
+     * @param winMessage - the learned skill
+     */
+    public void handleSuccess(Message winMessage) {
+
+        currentRound++;
+        KitchenServer.getInstance().log("#######");
+        KitchenServer.getInstance().log("RUNDE " + currentRound);
+        KitchenServer.getInstance().log("#######");
+        ConnectionHandler.broadcastSuccess();
+
+        if (currentRound >= numberOfRounds) {
+            stop(GameResult.SUCCESS, winMessage);
+        } else {
+            newOrder(timePerOrder);
+        }
+
+        KitchenServer.getInstance().log(winMessage.getMessage());
+
+    }
+
+    /**
+     * game results
+     */
+    private enum GameResult {
+        SUCCESS, FAILURE
+    }
+
+    /**
+     * the messages that can be sent
+     */
+    public enum Message {
+        FAIL_SEQUENCE("Die Reihenfolge der Zutaten stimmt nicht! Nutze den Chat, um mit deinen Mitspielern zu besprechen, " +
+                "wer welche Zutaten zu welcher Zeit in den Kochtopf gibt."),
+        FAIL_TIME("Leider ist die Zeit abgelaufen! Um die vielen Zutaten in der kurzen Zeit einzusammeln und im Kochtopf " +
+                "zu platzieren, ist es wichtig, dass du dich mit deinen Mitspielern abstimmst! Insbesondere solltet " +
+                "ihr euch darauf einigen, wer welche Zutaten einsammelt. Du kannst dafür den Chat nutzen!"),
+        FAIL_SYNC("Leider habt ihr die Zutaten nicht schnell genug hintereinander in den Kochtopf gegeben."),
+
+        //TODO richtige nachrichten
+        WIN_SEQUENCE("NICE WIN SEQUENCE"),
+        WIN_SYNC("NICE WIN SYNC"),
+        WIN_GAME("Glückwunsch, ihr habt diese Spielrunde gewonnen!");
+
+        private String message;
+
+        Message(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
 
 }
