@@ -137,7 +137,7 @@ public class Drawable {
             } else if (queuePos == -2) {
                 // a sync order
                 g.drawImage(ImageIO.read(Drawable.class.getResourceAsStream("/clock.png")),
-                        x - (image.getWidth() / 2) - 2, y + 20, null);
+                        x - (image.getWidth() / 2) + 5, y + 15, null);
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -10,6 +10,7 @@ import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ public class ServerConnector implements Runnable {
     private ServerConnector() {
     }
 
-    public void connect(String ip, int port, String name) throws IOException {
+    public void connect(String ip, int port, String name, Color color) throws IOException {
         try {
             socket = null;
             this.socket = new Socket();
@@ -64,13 +65,14 @@ public class ServerConnector implements Runnable {
             outputStream.flush();
             this.inputStream = new ObjectInputStream(socket.getInputStream());
             System.out.println("Login läuft...");
-            sendLogin(name);
+            sendLogin(name, color);
             new Thread(this).start();
         } catch (ConnectException e) {
             JOptionPane.showMessageDialog(CommunicationKitchen.getInstance(),
-                    "WARNING.",
-                    "Warning",
-                    JOptionPane.WARNING_MESSAGE);
+                    "Keine Verbindung.",
+                    "Verbindung zum Server gescheitert!",
+                    JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -100,7 +102,7 @@ public class ServerConnector implements Runnable {
             e.printStackTrace();
         }
     }
-  
+
     /**
      * sends a move request to the server
      *
@@ -170,12 +172,14 @@ public class ServerConnector implements Runnable {
     /**
      * sends a login message to the server
      *
-     * @param name the player name
+     * @param name  the player name
+     * @param color the players color
      */
-    public void sendLogin(String name) {
+    public void sendLogin(String name, Color color) {
         try {
             outputStream.writeUTF("LOGIN");
             outputStream.writeUTF(name);
+            outputStream.writeInt(color.getRGB());
             outputStream.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -193,7 +197,8 @@ public class ServerConnector implements Runnable {
 
                 if (message.equals("LOGINOK")) {
                     DrawablePlayer player = new DrawablePlayer(UUID.fromString(inputStream.readUTF()),
-                            inputStream.readUTF(), inputStream.readInt(), inputStream.readInt());
+                            inputStream.readUTF(), new Color(inputStream.readInt()), inputStream.readInt(),
+                            inputStream.readInt());
                     CommunicationKitchen.getInstance().setMe(player.getId());
                     CommunicationKitchen.getInstance().getDrawables().add(player);
                     int w = inputStream.readInt();
@@ -210,11 +215,12 @@ public class ServerConnector implements Runnable {
                 } else if (message.equals("NEWPLAYER")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     String name = inputStream.readUTF();
+                    Color color = new Color(inputStream.readInt());
                     int x = inputStream.readInt();
                     int y = inputStream.readInt();
                     if (!CommunicationKitchen.getInstance().getMe().equals(id)) {
                         CommunicationKitchen.getInstance().getDrawables().add(
-                                new DrawablePlayer(id, name, x, y));
+                                new DrawablePlayer(id, name, color, x, y));
                         DrawingBoard.getInstance().repaint();
                     }
 

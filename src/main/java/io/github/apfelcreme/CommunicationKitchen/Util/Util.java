@@ -3,6 +3,8 @@ package io.github.apfelcreme.CommunicationKitchen.Util;
 import io.github.apfelcreme.CommunicationKitchen.Client.Drawable.DrawablePlayer;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -41,8 +43,9 @@ public class Util {
                 drawablePlayers.add(new DrawablePlayer(
                         UUID.fromString(player.split(",")[0]),
                         player.split(",")[1],
-                        Integer.valueOf(player.split(",")[2]),
-                        Integer.valueOf(player.split(",")[3])
+                        new Color(Integer.valueOf(player.split(",")[2])),
+                        Integer.valueOf(player.split(",")[3]),
+                        Integer.valueOf(player.split(",")[4])
                 ));
             }
         }
@@ -58,7 +61,8 @@ public class Util {
     public static String serializePlayerList(List<Player> players) {
         String ret = "";
         for (Player player : players) {
-            ret += player.getId() + "," + player.getName() + "," + player.getX() + "," + player.getY() + "|";
+            ret += player.getId() + "," + player.getName() + "," + player.getColor().getRGB() + "," + player.getX()
+                    + "," + player.getY() + "|";
         }
         return ret;
     }
@@ -77,4 +81,25 @@ public class Util {
         return (x1 < (x2 + tolerance)) && (x1 > (x2 - tolerance)) && (y1 < (y2 + tolerance)) && (y1 > (y2 - tolerance));
     }
 
+    /**
+     * colorizes the player image
+     *
+     * @param image the player image
+     * @param color the player color
+     * @return a colorized image
+     */
+    public static BufferedImage colorize(BufferedImage image, Color color) {
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                if (image.getRGB(x, y) == new Color(255, 0, 0).getRGB()) {
+                    image.setRGB(x, y, color.brighter().getRGB());
+                } else if (image.getRGB(x, y) == new Color(0, 255, 0).getRGB()) {
+                    image.setRGB(x, y, color.darker().getRGB());
+                } else if (image.getRGB(x, y) == new Color(0, 0, 255).getRGB()) {
+                    image.setRGB(x, y, color.getRGB());
+                }
+            }
+        }
+        return image;
+    }
 }

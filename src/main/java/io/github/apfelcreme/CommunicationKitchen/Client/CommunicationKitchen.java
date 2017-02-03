@@ -83,11 +83,12 @@ public class CommunicationKitchen extends JFrame {
     }
 
     private CommunicationKitchen() {
-        String ip = JOptionPane.showInputDialog(this, "IP", "127.0.0.1");
-        String name = JOptionPane.showInputDialog(this, "Name", "Name");
+    }
+
+    public void initialize(String ip, String name, Color color) {
         try {
             initGui(50, 50);
-            ServerConnector.getInstance().connect(ip, 1337, name);
+            ServerConnector.getInstance().connect(ip, 1337, name, color);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -302,8 +303,6 @@ public class CommunicationKitchen extends JFrame {
         });
         this.setSize(new Dimension(width, height));
         DrawingBoard.getInstance().requestFocus();
-
-        System.out.println(new File(CommunicationKitchen.class.getResource("/checklist.png").toExternalForm()).exists());
 
             setMessage(
                     "<u><b>Spielanleitung:</b></u><br />" +
@@ -650,15 +649,6 @@ public class CommunicationKitchen extends JFrame {
             }
         }
         return instance;
-    }
-
-    /**
-     * start :)
-     *
-     * @param args the start parameters
-     */
-    public static void main(String[] args) {
-        CommunicationKitchen.getInstance();
     }
 
 }

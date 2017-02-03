@@ -2,6 +2,7 @@ package io.github.apfelcreme.CommunicationKitchen.Client.Drawable;
 
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
+import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -32,12 +33,14 @@ public class DrawablePlayer extends Drawable {
 
     private Direction direction;
     private String name;
+    private Color color;
     private String chat;
     private DrawableType carrying;
 
-    public DrawablePlayer(UUID id, String name, int x, int y) {
+    public DrawablePlayer(UUID id, String name, Color color, int x, int y) {
         super(id, 0, DrawableType.PLAYER, x, y);
         this.name = name;
+        this.color = color;
         this.chat = "";
         this.direction = Direction.SOUTH;
         carrying = DrawableType.NOTHING;
@@ -72,6 +75,7 @@ public class DrawablePlayer extends Drawable {
                             .getSubimage(0, 120, 40, 40);
                     break;
             }
+            image = Util.colorize(image, color);
         } catch (IOException e) {
             e.printStackTrace();
         }

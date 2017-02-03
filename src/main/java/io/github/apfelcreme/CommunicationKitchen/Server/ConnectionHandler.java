@@ -9,6 +9,7 @@ import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
+import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.UUID;
@@ -59,9 +60,11 @@ public class ConnectionHandler implements Runnable {
                     // send ok to the connecting player
                     UUID newId = UUID.randomUUID();
                     String name = inputStream.readUTF();
+                    Color color = new Color(inputStream.readInt());
                     sendLoginConfirmation(
                             newId, // player id
                             name,
+                            color,
                             200, // new player x coordinate
                             200, // new player y coordinate
                             KitchenServer.getInstance().getFieldDimension().width, // field width
@@ -75,10 +78,11 @@ public class ConnectionHandler implements Runnable {
                     broadcastNewPlayerArrival(
                             newId, // player id
                             name, // the player name
+                            color, // the player color
                             200, // new player x coordinate
                             200 // new player y coordinate
                     );
-                    KitchenServer.getInstance().addPlayer(new Player(newId, name, 200, 200, Direction.SOUTH));
+                    KitchenServer.getInstance().addPlayer(new Player(newId, name, color, 200, 200, Direction.SOUTH));
                     KitchenServer.getInstance().log("Login granted");
 
                 } else if (message.equals("MOVE")) {
@@ -130,18 +134,20 @@ public class ConnectionHandler implements Runnable {
     /**
      * sends a message to a player that a player has arrived
      *
-     * @param id   the player id
-     * @param name the players name
-     * @param x    his x coordinate
-     * @param y    his y coordinate
+     * @param id    the player id
+     * @param name  the players name
+     * @param color the player color
+     * @param x     his x coordinate
+     * @param y     his y coordinate
      */
-    public static void broadcastNewPlayerArrival(UUID id, String name, int x, int y) {
+    public static void broadcastNewPlayerArrival(UUID id, String name, Color color, int x, int y) {
         try {
             for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
                 synchronized (connectionHandler.getOutputStream()) {
                     connectionHandler.getOutputStream().writeUTF("NEWPLAYER");
                     connectionHandler.getOutputStream().writeUTF(id.toString());
                     connectionHandler.getOutputStream().writeUTF(name);
+                    connectionHandler.getOutputStream().writeInt(color.getRGB());
                     connectionHandler.getOutputStream().writeInt(x);
                     connectionHandler.getOutputStream().writeInt(y);
                     connectionHandler.getOutputStream().flush();
@@ -439,6 +445,7 @@ public class ConnectionHandler implements Runnable {
      *
      * @param id                   the id the new player is given
      * @param name                 the player name
+     * @param color                the player color
      * @param x                    the x coordinate he spawns on
      * @param y                    the y coordinate he spawns on
      * @param width                the width of the playing field
@@ -446,13 +453,14 @@ public class ConnectionHandler implements Runnable {
      * @param serializedPlayerList a serialized list of all players that are currently logged in
      * @param lives                the amount of lives the players have
      */
-    private void sendLoginConfirmation(UUID id, String name, int x, int y, int width, int height,
+    private void sendLoginConfirmation(UUID id, String name, Color color, int x, int y, int width, int height,
                                        String serializedPlayerList, int lives) {
         try {
             synchronized (outputStream) {
                 outputStream.writeUTF("LOGINOK");
                 outputStream.writeUTF(id.toString());
                 outputStream.writeUTF(name);
+                outputStream.writeInt(color.getRGB());
                 outputStream.writeInt(x);
                 outputStream.writeInt(y);
                 outputStream.writeInt(width);

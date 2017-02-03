@@ -9,7 +9,9 @@ import io.github.apfelcreme.CommunicationKitchen.Server.Order.SyncOrder;
 import io.github.apfelcreme.CommunicationKitchen.Util.Direction;
 import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 /**
  * Copyright (C) 2017 Lord36 aka Apfelcreme
@@ -33,15 +35,17 @@ public class Player {
 
     private UUID id;
     private String name;
+    private Color color;
     private int x;
     private int y;
     private Direction direction;
     private Ingredient carrying;
     private boolean ready = false;
 
-    public Player(UUID id, String name, int x, int y, Direction direction) {
+    public Player(UUID id, String name, Color color, int x, int y, Direction direction) {
         this.id = id;
         this.name = name;
+        this.color = color;
         this.x = x;
         this.y = y;
         this.direction = direction;
@@ -357,6 +361,15 @@ public class Player {
      */
     public void setReady(boolean ready) {
         this.ready = ready;
+    }
+
+    /**
+     * returns the color
+     *
+     * @return the color
+     */
+    public Color getColor() {
+        return color;
     }
 
     @Override
