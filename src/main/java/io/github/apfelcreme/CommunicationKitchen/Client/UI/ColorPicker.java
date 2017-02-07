@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 
 /**
@@ -49,15 +50,31 @@ public class ColorPicker extends JPanel {
         image.setRGB(0, 0, width, height, data, 0, width);
         setSize(width, height + 25);
 
-        this.addMouseListener(new MouseAdapter() {
+        this.addMouseMotionListener(new MouseMotionAdapter() {
+
             @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getX() < width && e.getY() < height) {
+            public void mouseDragged(MouseEvent e) {
+                if ((e.getX() > 0) && (e.getX() < width) && (e.getY() > 0) && (e.getY() < height)) {
                     selectedColor = new Color(image.getRGB(e.getX(), e.getY()));
                     repaint();
                 }
             }
         });
+
+        this.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+            }
+
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                setCursor(Cursor.getDefaultCursor());
+            }
+        });
+
     }
 
     @Override

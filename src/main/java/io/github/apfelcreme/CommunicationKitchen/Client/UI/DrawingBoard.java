@@ -41,7 +41,7 @@ public class DrawingBoard extends JPanel {
     public static DrawingBoard getInstance() {
         if (instance == null) {
             instance = new DrawingBoard();
-        }
+    }
         return instance;
     }
 

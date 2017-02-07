@@ -62,15 +62,15 @@ public class Player {
         int maxY = KitchenServer.getInstance().getFieldDimension().height - 20;
         switch (direction) {
             case NORTH:
-                y = y - 10;
+                y = y - 3;
                 if (y < minY) {
                     y = minY;
                 }
                 setDirection(direction);
                 break;
             case NORTH_WEST:
-                x = x - 7;
-                y = y - 7;
+                x = x - 2;
+                y = y - 2;
                 if (x < minX) {
                     x = minX;
                 }
@@ -80,15 +80,15 @@ public class Player {
                 setDirection(direction);
                 break;
             case WEST:
-                x = x - 10;
+                x = x - 3;
                 if (x < minX) {
                     x = minX;
                 }
                 setDirection(direction);
                 break;
             case SOUTH_WEST:
-                x = x - 7;
-                y = y + 7;
+                x = x - 2;
+                y = y + 2;
                 if (x < minX) {
                     x = minX;
                 }
@@ -98,15 +98,15 @@ public class Player {
                 setDirection(direction);
                 break;
             case SOUTH:
-                y = y + 10;
+                y = y + 3;
                 if (y > maxY) {
                     y = maxY;
                 }
                 setDirection(direction);
                 break;
             case SOUTH_EAST:
-                x = x + 7;
-                y = y + 7;
+                x = x + 2;
+                y = y + 2;
                 if (x > maxX) {
                     x = maxX;
                 }
@@ -116,15 +116,15 @@ public class Player {
                 setDirection(direction);
                 break;
             case EAST:
-                x = x + 10;
+                x = x + 3;
                 if (x > maxX) {
                     x = maxX;
                 }
                 setDirection(direction);
                 break;
             case NORTH_EAST:
-                x = x + 7;
-                y = y - 7;
+                x = x + 2;
+                y = y - 2;
                 if (x > maxX) {
                     x = maxX;
                 }

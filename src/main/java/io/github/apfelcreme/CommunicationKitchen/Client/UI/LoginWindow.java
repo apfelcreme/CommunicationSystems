@@ -197,6 +197,7 @@ public class LoginWindow extends JFrame implements ActionListener {
                         new Insets(0, 0, 0, 0), 0, 0));
 
         this.setSize(width + 4, height + 15);
+        this.setIconImage(ImageIO.read(getClass().getResourceAsStream("/Drawables/CARROT.png")));
         this.setUndecorated(true);
         this.setBackground(new Color(0, 0, 0, 0));
         this.setVisible(true);

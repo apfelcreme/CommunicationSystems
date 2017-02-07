@@ -1,6 +1,7 @@
 package io.github.apfelcreme.CommunicationKitchen.Server;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
+import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
 import io.github.apfelcreme.CommunicationKitchen.Server.Order.Order;
 import io.github.apfelcreme.CommunicationKitchen.Server.Order.SequenceOrder;
@@ -59,34 +60,49 @@ public class Game {
     /**
      * The action to be performed by this timer task.
      */
-    public void newOrder(long time) {
-        Order order;
-        if (Math.random() >= 0.5) {
-            order = new SyncOrder(UUID.randomUUID(), KitchenServer.getInstance().getPlayers().size(), time, 3000);
-        } else {
-            order = new SequenceOrder(UUID.randomUUID(), (int) ((KitchenServer.getInstance().getPlayers().size() + 1) * 1.5), time);
-        }
-        runningOrders.add(order);
-        KitchenServer.getInstance().log("Order-Spawn: " + order.getClass().getName());
-        for (Ingredient ingredient : order.getIngredients()) {
-            KitchenServer.getInstance().log("  " + ingredient.getId() + " - "
-                    + ingredient.getType() + "(" + ingredient.getX() + "," + ingredient.getY() + ")");
-            ConnectionHandler.broadcastAddDrawable(ingredient.getId(),
-                    ingredient.getQueuePos(),
-                    ingredient.getType().getDrawableType(),
-                    ingredient.getX(),
-                    ingredient.getY());
-        }
-        Pot pot = new Pot(
-                UUID.randomUUID(),
-                40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().width - 80),
-                40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().height - 80)
-        );
-        KitchenServer.getInstance().log("Pot-Spawn (" + pot.getX() + "," + pot.getY() + ")");
-        order.setPot(pot);
-        ConnectionHandler.broadcastAddDrawable(pot.getId(), -1, DrawableType.POT, pot.getX(), pot.getY());
-        ConnectionHandler.broadcastNewOrder(order);
-        ConnectionHandler.broadcastLives(currentLives);
+    public void newOrder(final long time) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean notReady = true;
+                while (notReady) {
+                    //wait until all players are ready
+                    for (Player player : KitchenServer.getInstance().getPlayers()) {
+                        if (player.isReady()) {
+                            notReady = false;
+                        }
+                    }
+                    System.out.println("WAITING");
+                }
+                Order order;
+                if (Math.random() >= 0.5) {
+                    order = new SyncOrder(UUID.randomUUID(), KitchenServer.getInstance().getPlayers().size(), time, 3000);
+                } else {
+                    order = new SequenceOrder(UUID.randomUUID(), (int) ((KitchenServer.getInstance().getPlayers().size() + 1) * 1.5), time);
+                }
+                runningOrders.add(order);
+                KitchenServer.getInstance().log("Order-Spawn: " + order.getClass().getName());
+                for (Ingredient ingredient : order.getIngredients()) {
+                    KitchenServer.getInstance().log("  " + ingredient.getId() + " - "
+                            + ingredient.getType() + "(" + ingredient.getX() + "," + ingredient.getY() + ")");
+                    ConnectionHandler.broadcastAddDrawable(ingredient.getId(),
+                            ingredient.getQueuePos(),
+                            ingredient.getType().getDrawableType(),
+                            ingredient.getX(),
+                            ingredient.getY());
+                }
+                Pot pot = new Pot(
+                        UUID.randomUUID(),
+                        40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().width - 80),
+                        40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().height - 80)
+                );
+                KitchenServer.getInstance().log("Pot-Spawn (" + pot.getX() + "," + pot.getY() + ")");
+                order.setPot(pot);
+                ConnectionHandler.broadcastAddDrawable(pot.getId(), -1, DrawableType.POT, pot.getX(), pot.getY());
+                ConnectionHandler.broadcastNewOrder(order);
+                ConnectionHandler.broadcastLives(currentLives);
+            }
+        }).start();
     }
 
     /**
@@ -137,7 +153,7 @@ public class Game {
             task.cancel();
         }
         KitchenServer.getInstance().log("Stop game due to " + gameResult.name()
-                + ". FailureReason: " + reason);
+                + ". Reason: " + reason);
     }
 
     /**
@@ -146,8 +162,13 @@ public class Game {
      * @param reason - the reason for failing
      */
     public void handleFailure(Message reason) {
+
+        //TODO: Fixen, dass die nachrichten vernünftig erscheinen (bis jetzt nur ganz am ende)
         if (failedOrders.size() == 0) {
             ConnectionHandler.broadcastMessage(reason);
+            for (Player player : KitchenServer.getInstance().getPlayers()) {
+                player.setReady(false);
+            }
         }
         currentLives--;
         ConnectionHandler.broadcastLives(currentLives);
@@ -165,10 +186,17 @@ public class Game {
      * @param winMessage - the learned skill
      */
     public void handleSuccess(Message winMessage) {
+        //TODO: Fixen, dass die nachrichten vernünftig erscheinen (mal schauen wie am besten ist)
+        if (successfulOrders.size() == 0) {
+            ConnectionHandler.broadcastMessage(winMessage);
+            for (Player player : KitchenServer.getInstance().getPlayers()) {
+                player.setReady(false);
+            }
+        }
         currentRound++;
         ConnectionHandler.broadcastOrderSuccess();
         if (currentRound >= numberOfRounds) {
-            stop(GameResult.SUCCESS, winMessage);
+            stop(GameResult.SUCCESS, Message.WIN_GAME);
         } else {
             newOrder(timePerOrder);
         }

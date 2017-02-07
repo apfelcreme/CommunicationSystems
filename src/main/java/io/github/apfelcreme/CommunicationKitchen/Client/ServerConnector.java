@@ -72,6 +72,7 @@ public class ServerConnector implements Runnable {
                     "Keine Verbindung.",
                     "Verbindung zum Server gescheitert!",
                     JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
             System.exit(0);
         } catch (IOException e) {
             e.printStackTrace();
@@ -314,6 +315,7 @@ public class ServerConnector implements Runnable {
 
                 } else if (message.equals("MESSAGE")) {
                     CommunicationKitchen.getInstance().setMessage(inputStream.readUTF());
+                    ServerConnector.getInstance().sendReady(CommunicationKitchen.getInstance().getMe(), false);
                 }
 
             }

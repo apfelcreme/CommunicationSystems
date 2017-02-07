@@ -2,6 +2,7 @@ package io.github.apfelcreme.CommunicationKitchen.Server;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
 import java.awt.*;
@@ -58,7 +59,7 @@ public class KitchenServer extends JFrame implements Runnable {
      * the log textfield
      */
     private JTextArea log;
-    
+
     private int currentRound = 0;
     private JList<Player> playerListGui = new JList<Player>();
 
@@ -81,7 +82,7 @@ public class KitchenServer extends JFrame implements Runnable {
     /**
      * initializes the GUI
      */
-    private void setGui() {
+    private void setGui() throws IOException {
         JButton bnStart = new JButton("Start Game");
         log = new JTextArea();
         log.setLineWrap(true);
@@ -96,15 +97,15 @@ public class KitchenServer extends JFrame implements Runnable {
         this.getContentPane().add(bnStart,
                 new GridBagConstraints(0, 0, 2, 1, 1.0, 0.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+                        new Insets(5, 5, 0, 5), 0, 0));
         this.getContentPane().add(new JScrollPane(log),
                 new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+                        new Insets(5, 5, 5, 5), 0, 0));
         this.getContentPane().add(playerListGui,
                 new GridBagConstraints(1, 1, 1, 1, 0.0, 1.0,
                         GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+                        new Insets(5, 5, 5, 0), 0, 0));
         bnStart.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (allPlayersReady()) {
@@ -129,6 +130,7 @@ public class KitchenServer extends JFrame implements Runnable {
             }
         });
         this.setSize(600, 400);
+        this.setIconImage(ImageIO.read(getClass().getResourceAsStream("/Drawables/CARROT.png")));
         this.setVisible(true);
     }
 
@@ -248,6 +250,15 @@ public class KitchenServer extends JFrame implements Runnable {
      */
     public Game getGame() {
         return game;
+    }
+
+    /**
+     * returns the gui list
+     *
+     * @return the gui list
+     */
+    public JList<Player> getPlayerListGui() {
+        return playerListGui;
     }
 
     /**
