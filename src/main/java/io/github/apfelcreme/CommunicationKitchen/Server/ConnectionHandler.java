@@ -118,6 +118,16 @@ public class ConnectionHandler implements Runnable {
                     }
                     KitchenServer.getInstance().getPlayerListGui().repaint();
 
+                } else if (message.equals("PAUSE")) {
+                	// TODO: Implement game pausing
+                    UUID id = UUID.fromString(inputStream.readUTF());                    
+                    Player player = KitchenServer.getInstance().getPlayer(id);
+                    if (player != null) {
+                        player.setReady(false);
+                        KitchenServer.getInstance().log("Player " + id + " paused the game");
+                    }
+                    KitchenServer.getInstance().getPlayerListGui().repaint();
+
                 } else if (message.equals("CHAT")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     String chat = inputStream.readUTF();

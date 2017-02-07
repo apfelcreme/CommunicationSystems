@@ -6,6 +6,7 @@ import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -92,6 +93,18 @@ public class DrawablePlayer extends Drawable {
         super.draw(g);
 
         if (!chat.isEmpty()) {
+        	g.setFont(new Font("chat", Font.BOLD, 12));
+        	Color bgColor = new Color(224, 228, 231);
+
+            FontMetrics fm = g.getFontMetrics();
+            Rectangle2D rect = fm.getStringBounds(chat, g);
+
+            g.setColor(bgColor);
+            g.fillRect(getX() + 20,
+            		   getY() + 20 - fm.getAscent(),
+                       (int) rect.getWidth(),
+                       (int) rect.getHeight());
+            g.setColor(Color.BLACK);
             g.drawString(chat, getX() + 20, getY() + 20);
         }
         g.drawString(name, getX() + 20, getY());

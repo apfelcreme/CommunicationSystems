@@ -171,6 +171,21 @@ public class ServerConnector implements Runnable {
     }
 
     /**
+     * sends a pause request
+     *
+     * @param id    me (the player who pressed the button)
+     */
+    public void sendPause(UUID id) {
+        try {
+            outputStream.writeUTF("PAUSE");
+            outputStream.writeUTF(id.toString());           
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
      * sends a login message to the server
      *
      * @param name  the player name

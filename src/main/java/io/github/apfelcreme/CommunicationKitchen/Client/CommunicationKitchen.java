@@ -274,7 +274,9 @@ public class CommunicationKitchen extends JFrame {
                         "<li>&nbsp;der Reihe nach: Die Zutaten müssen in einer festen Reihenfolge abgeliefert werden.</li>" +
                         "</ol>" +
                         "Wenn ihr die Bestellung nicht erfolgreich abschließen könnt, verliert ihr ein Leben!" +
-                        "</left>");
+                        "</left><br /><br />" +
+                        "Mit W, A, S, D kannst du deine Figur steuern und mit der Leertaste aufgenommene Zutaten wieder abwerfen. <br />" +
+                        "Mit F1 kannst du den Chat nutzen und auch wieder verlassen.");
 
         //Key Inputs
         initKeys();
@@ -550,7 +552,7 @@ public class CommunicationKitchen extends JFrame {
             }
         }).start();
 
-        InputMap inputMap = DrawingBoard.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        InputMap inputMap = DrawingBoard.getInstance().getInputMap(JComponent.WHEN_FOCUSED);
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0, false), "w_pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0, true), "w_released");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0, false), "a_pressed");
@@ -558,11 +560,17 @@ public class CommunicationKitchen extends JFrame {
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "s_pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "s_released");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "d_pressed");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "d_released");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false), "enter_pressed");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enter_released");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "d_released");       
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, false), "space_pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, true), "space_released");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, false), "f1_pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, true), "f1_released");
+        
+        InputMap chatInputMap = chat.getInputMap(JComponent.WHEN_FOCUSED);
+        chatInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false), "enter_pressed");
+        chatInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enter_released");
+
+        
         ActionMap actionMap = DrawingBoard.getInstance().getActionMap();
         actionMap.put("w_pressed", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
@@ -603,17 +611,7 @@ public class CommunicationKitchen extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 keysPressed.remove(KeyEvent.VK_D);
             }
-        });
-        actionMap.put("enter_pressed", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                keysPressed.add(KeyEvent.VK_ENTER);
-            }
-        });
-        actionMap.put("enter_released", new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                keysPressed.remove(KeyEvent.VK_ENTER);
-            }
-        });
+        });        
         actionMap.put("space_pressed", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 keysPressed.add(KeyEvent.VK_SPACE);
@@ -622,6 +620,28 @@ public class CommunicationKitchen extends JFrame {
         actionMap.put("space_released", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 keysPressed.remove(KeyEvent.VK_SPACE);
+            }
+        });
+        actionMap.put("f1_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_F1);
+            }
+        });
+        actionMap.put("f1_released", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.remove(KeyEvent.VK_F1);
+            }
+        });
+        
+        ActionMap chatActionMap = chat.getActionMap();
+        chatActionMap.put("enter_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_ENTER);
+            }
+        });
+        chatActionMap.put("enter_released", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.remove(KeyEvent.VK_ENTER);
             }
         });
     }
@@ -654,8 +674,17 @@ public class CommunicationKitchen extends JFrame {
             } else if (keysPressed.contains(KeyEvent.VK_SPACE)) {
                 ServerConnector.getInstance().sendItemDrop(me);
             } else if (keysPressed.contains(KeyEvent.VK_ENTER)) {
-                ServerConnector.getInstance().sendChatMessage(me, chat.getText());
+            	ServerConnector.getInstance().sendChatMessage(me, chat.getText());
+                chat.setText("");
                 DrawingBoard.getInstance().requestFocus();
+                keysPressed.remove(KeyEvent.VK_ENTER);
+            } else if (keysPressed.contains(KeyEvent.VK_F1)) {
+            	if(DrawingBoard.getInstance().hasFocus()) {
+            		chat.requestFocus();
+            	} else {
+            		DrawingBoard.getInstance().requestFocus();
+            	}
+            	keysPressed.remove(KeyEvent.VK_F1);
             }
         }
     }
