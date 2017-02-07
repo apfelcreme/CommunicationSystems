@@ -13,7 +13,7 @@
     </properties>
 
     <build>
-        <finalName>CommunicationKitchen</finalName>
+        <finalName>CommunicationKitchen-Server</finalName>
         <resources>
             <resource>
                 <filtering>true</filtering>
@@ -27,7 +27,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.github.apfelcreme.CommunicationKitchen.Client.UI.LoginWindow</mainClass>
+                            <mainClass>io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
