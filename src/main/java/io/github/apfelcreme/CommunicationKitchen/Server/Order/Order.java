@@ -32,12 +32,14 @@ public abstract class Order extends TimerTask {
     private UUID id;
     protected ArrayList<Ingredient> ingredients;
     private long time;
+    private long remainingTime;
     private Pot pot;
 
     public Order(UUID id, long time) {
         this.id = id;
         this.time = time;
-        new Timer().schedule(this, time);
+        this.remainingTime = time;
+        new Timer().schedule(this, 100, 100);        
     }
 
     /**
@@ -147,7 +149,12 @@ public abstract class Order extends TimerTask {
      */
     @Override
     public void run() {
-        remove(Result.FAILED, Game.Message.FAIL_TIME);
+    	if(!KitchenServer.getInstance().getGame().isPaused()) {
+    		remainingTime -= 100;
+    	}
+    	if (remainingTime <= 0) {
+    		remove(Result.FAILED, Game.Message.FAIL_TIME);
+    	}
     }
 
     /**

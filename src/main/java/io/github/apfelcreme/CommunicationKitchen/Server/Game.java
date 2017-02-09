@@ -35,6 +35,8 @@ public class Game {
 
     private int timePerOrder;
     private int numberOfRounds;
+    
+    private boolean paused;
 
     private TimerTask task = null;
 
@@ -157,6 +159,20 @@ public class Game {
     }
 
     /**
+     * @param paused	
+     */
+    public void setPaused(boolean paused) {
+    	this.paused = paused;
+    }
+    
+    /**
+	 * @return the paused
+	 */
+	public boolean isPaused() {
+		return paused;
+	}
+
+	/**
      * Handles a failure. Stops the game if necessary (no more lives)
      *
      * @param reason - the reason for failing

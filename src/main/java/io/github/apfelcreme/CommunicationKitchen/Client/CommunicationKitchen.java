@@ -66,6 +66,7 @@ public class CommunicationKitchen extends JFrame {
     private UUID me = null;
     private int hearts = 0;
     private int round = 0;
+    private boolean paused = false;
 
     private JTextField chat = new JTextField("Chat");
     private JPanel messagePanel;
@@ -298,9 +299,14 @@ public class CommunicationKitchen extends JFrame {
             }
         });
         bnPause.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                ServerConnector.getInstance().sendReady(me, false);
-                toggleMessageBoard(true);
+            public void actionPerformed(ActionEvent e) {            	
+//                if (!paused) {
+//                	ServerConnector.getInstance().sendPause(me);
+//                } else {
+//                	ServerConnector.getInstance().sendResume(me);
+//                }
+                ServerConnector.getInstance().sendToggleGameState(me);
+                //toggleMessageBoard(true);
                 DrawingBoard.getInstance().requestFocus();
             }
         });
@@ -535,6 +541,14 @@ public class CommunicationKitchen extends JFrame {
     }
 
     /**
+	 * @param paused the paused to set
+	 */
+	public void setPaused(boolean paused) {
+		this.paused = paused;
+		bnPause.setText(paused ? "Fortsetzen" : "Pause");
+	}
+
+	/**
      * initializes all key events
      */
     public void initKeys() {
@@ -552,6 +566,12 @@ public class CommunicationKitchen extends JFrame {
             }
         }).start();
 
+        InputMap windowInputMap = DrawingBoard.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, false), "f1_pressed");
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, true), "f1_released");
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_PAUSE, 0, false), "pause_pressed");
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_PAUSE, 0, true), "pause_released");
+        
         InputMap inputMap = DrawingBoard.getInstance().getInputMap(JComponent.WHEN_FOCUSED);
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0, false), "w_pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0, true), "w_released");
@@ -563,9 +583,7 @@ public class CommunicationKitchen extends JFrame {
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "d_released");       
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, false), "space_pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, true), "space_released");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, false), "f1_pressed");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, true), "f1_released");
-        
+                
         InputMap chatInputMap = chat.getInputMap(JComponent.WHEN_FOCUSED);
         chatInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false), "enter_pressed");
         chatInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enter_released");
@@ -633,6 +651,12 @@ public class CommunicationKitchen extends JFrame {
             }
         });
         
+        actionMap.put("pause_pressed", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                keysPressed.add(KeyEvent.VK_PAUSE);
+            }
+        });
+        
         ActionMap chatActionMap = chat.getActionMap();
         chatActionMap.put("enter_pressed", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
@@ -651,7 +675,7 @@ public class CommunicationKitchen extends JFrame {
      */
     private void execute() {
         if (!keysPressed.isEmpty()) {
-            if (keysPressed.contains(KeyEvent.VK_W)) {
+            if (keysPressed.contains(KeyEvent.VK_W) && !paused) {
                 if (keysPressed.contains(KeyEvent.VK_A)) {
                     ServerConnector.getInstance().sendPlayerMove(me, Direction.NORTH_WEST);
                 } else if (keysPressed.contains(KeyEvent.VK_D)) {
@@ -659,7 +683,7 @@ public class CommunicationKitchen extends JFrame {
                 } else {
                     ServerConnector.getInstance().sendPlayerMove(me, Direction.NORTH);
                 }
-            } else if (keysPressed.contains(KeyEvent.VK_S)) {
+            } else if (keysPressed.contains(KeyEvent.VK_S) && !paused) {
                 if (keysPressed.contains(KeyEvent.VK_A)) {
                     ServerConnector.getInstance().sendPlayerMove(me, Direction.SOUTH_WEST);
                 } else if (keysPressed.contains(KeyEvent.VK_D)) {
@@ -667,11 +691,11 @@ public class CommunicationKitchen extends JFrame {
                 } else {
                     ServerConnector.getInstance().sendPlayerMove(me, Direction.SOUTH);
                 }
-            } else if (keysPressed.contains(KeyEvent.VK_A)) {
+            } else if (keysPressed.contains(KeyEvent.VK_A) && !paused) {
                 ServerConnector.getInstance().sendPlayerMove(me, Direction.WEST);
-            } else if (keysPressed.contains(KeyEvent.VK_D)) {
+            } else if (keysPressed.contains(KeyEvent.VK_D) && !paused) {
                 ServerConnector.getInstance().sendPlayerMove(me, Direction.EAST);
-            } else if (keysPressed.contains(KeyEvent.VK_SPACE)) {
+            } else if (keysPressed.contains(KeyEvent.VK_SPACE) && !paused) {
                 ServerConnector.getInstance().sendItemDrop(me);
             } else if (keysPressed.contains(KeyEvent.VK_ENTER)) {
             	ServerConnector.getInstance().sendChatMessage(me, chat.getText());
@@ -685,6 +709,9 @@ public class CommunicationKitchen extends JFrame {
             		DrawingBoard.getInstance().requestFocus();
             	}
             	keysPressed.remove(KeyEvent.VK_F1);
+            } else if (keysPressed.contains(KeyEvent.VK_PAUSE)) {
+            	ServerConnector.getInstance().sendToggleGameState(me);          	
+            	keysPressed.remove(KeyEvent.VK_PAUSE);
             }
         }
     }

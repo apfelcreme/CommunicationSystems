@@ -169,13 +169,13 @@ public class ServerConnector implements Runnable {
             e.printStackTrace();
         }
     }
-
+    
     /**
-     * sends a pause request
+     * sends a pause/resume request
      *
      * @param id    me (the player who pressed the button)
      */
-    public void sendPause(UUID id) {
+    public void sendToggleGameState(UUID id) {
         try {
             outputStream.writeUTF("PAUSE");
             outputStream.writeUTF(id.toString());           
@@ -331,6 +331,18 @@ public class ServerConnector implements Runnable {
                 } else if (message.equals("MESSAGE")) {
                     CommunicationKitchen.getInstance().setMessage(inputStream.readUTF());
                     ServerConnector.getInstance().sendReady(CommunicationKitchen.getInstance().getMe(), false);
+                    
+                } else if (message.equals("PAUSE")) {
+                	CommunicationKitchen.getInstance().setPaused(true);
+                	for(DrawableOrder order : CommunicationKitchen.getInstance().getOrders()) {
+                		order.pause();
+                	}
+                	
+                } else if (message.equals("RESUME")) {
+                	CommunicationKitchen.getInstance().setPaused(false);
+                	for(DrawableOrder order : CommunicationKitchen.getInstance().getOrders()) {
+                		order.resume();
+                	}
                 }
 
             }

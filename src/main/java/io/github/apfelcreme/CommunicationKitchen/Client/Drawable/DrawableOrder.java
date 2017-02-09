@@ -5,6 +5,8 @@ import io.github.apfelcreme.CommunicationKitchen.Client.CommunicationKitchen;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 /**
@@ -33,6 +35,7 @@ public class DrawableOrder {
     private int y;
     private long timeLimit;
     private long timeCreated;
+    private TimerTask pause;
     private List<Drawable> ingredients = new ArrayList<Drawable>();
 
     public DrawableOrder(UUID id, String type, int x, int y, long timeLimit, List<UUID> ingredientIds) {
@@ -139,5 +142,28 @@ public class DrawableOrder {
     public void setTimeNewLimit(long timeLimit) {
         this.timeLimit = timeLimit;
         this.timeCreated = new Date().getTime();
+    }
+    
+    /**
+     * Pause the order, i.e. prevent the timer from counting down
+     */
+    public void pause() {
+    	final long remainingTime = timeLimit - (System.currentTimeMillis() - timeCreated);
+    	pause = new TimerTask() {
+			
+			@Override
+			public void run() {
+				setTimeNewLimit(remainingTime + 100);				
+				
+			}
+		};
+		new Timer().schedule(pause, 100, 100);		
+    }
+    
+    /**
+     * Resume the order, i.e. let the timer start counting down again
+     */
+    public void resume() {
+    	pause.cancel();
     }
 }

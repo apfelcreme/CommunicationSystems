@@ -118,16 +118,19 @@ public class ConnectionHandler implements Runnable {
                     }
                     KitchenServer.getInstance().getPlayerListGui().repaint();
 
-                } else if (message.equals("PAUSE")) {
-                	// TODO: Implement game pausing
-                    UUID id = UUID.fromString(inputStream.readUTF());                    
-                    Player player = KitchenServer.getInstance().getPlayer(id);
-                    if (player != null) {
-                        player.setReady(false);
-                        KitchenServer.getInstance().log("Player " + id + " paused the game");
-                    }
-                    KitchenServer.getInstance().getPlayerListGui().repaint();
-
+                } else if (message.equals("PAUSE")) {                	
+                	Game game = KitchenServer.getInstance().getGame();
+                	if (game != null) {
+	                    UUID id = UUID.fromString(inputStream.readUTF());	                    
+	                    game.setPaused(!game.isPaused());
+	                    KitchenServer.getInstance().log("Player " + id + (game.isPaused() ? "paused" : "resumed") +  "the game");
+	                    if(game.isPaused()) {
+	                    	broadcastPause();	                    	
+	                    } else {
+	                    	broadcastResume();
+	                    }
+                	}
+                    
                 } else if (message.equals("CHAT")) {
                     UUID id = UUID.fromString(inputStream.readUTF());
                     String chat = inputStream.readUTF();
@@ -443,6 +446,40 @@ public class ConnectionHandler implements Runnable {
                 synchronized (connectionHandler.getOutputStream()) {
                     connectionHandler.getOutputStream().writeUTF("SETHEARTS");
                     connectionHandler.getOutputStream().writeInt(lives);
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * broadcasts that the game is paused to all players
+     *
+     */
+    public static void broadcastPause() {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("PAUSE");
+                    connectionHandler.getOutputStream().flush();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * broadcasts that the game is resumed to all players
+     *
+     */
+    public static void broadcastResume() {
+        try {
+            for (ConnectionHandler connectionHandler : KitchenServer.getInstance().getClientConnections()) {
+                synchronized (connectionHandler.getOutputStream()) {
+                    connectionHandler.getOutputStream().writeUTF("RESUME");
                     connectionHandler.getOutputStream().flush();
                 }
             }
