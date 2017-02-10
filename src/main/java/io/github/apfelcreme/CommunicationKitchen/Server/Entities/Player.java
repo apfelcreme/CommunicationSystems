@@ -53,9 +53,6 @@ public class Player {
     }
 
     public void move(Direction direction) {
-        if (KitchenServer.getInstance().getGame() == null) {
-            return;
-        }
         int minX = 20;
         int minY = 20;
         int maxX = KitchenServer.getInstance().getFieldDimension().width - 20;
@@ -136,10 +133,12 @@ public class Player {
         }
 
         // can the player pickup or deliver an ingredient?
-        List<Order> copy = new ArrayList<Order>();
-        copy.addAll(KitchenServer.getInstance().getGame().getRunningOrders());
-        for (Order order : copy) {
-            checkForOrderCompletion(order);
+        if (KitchenServer.getInstance().getGame() != null) {
+            List<Order> copy = new ArrayList<Order>();
+            copy.addAll(KitchenServer.getInstance().getGame().getRunningOrders());
+            for (Order order : copy) {
+                checkForOrderCompletion(order);
+            }
         }
 
         // send a message to all clients, so they can redraw the position
