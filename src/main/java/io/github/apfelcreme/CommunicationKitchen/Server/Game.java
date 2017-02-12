@@ -178,9 +178,7 @@ public class Game {
      * @param reason - the reason for failing
      */
     public void handleFailure(Message reason) {
-
-        //TODO: Fixen, dass die nachrichten vernünftig erscheinen (bis jetzt nur ganz am ende)
-        if (failedOrders.size() == 0) {
+        if (failedOrders.size() == 1) {
             ConnectionHandler.broadcastMessage(reason);
             for (Player player : KitchenServer.getInstance().getPlayers()) {
                 player.setReady(false);
@@ -202,8 +200,7 @@ public class Game {
      * @param winMessage - the learned skill
      */
     public void handleSuccess(Message winMessage) {
-        //TODO: Fixen, dass die nachrichten vernünftig erscheinen (mal schauen wie am besten ist)
-        if (successfulOrders.size() == 0) {
+        if (successfulOrders.size() == 1) {
             ConnectionHandler.broadcastMessage(winMessage);
             for (Player player : KitchenServer.getInstance().getPlayers()) {
                 player.setReady(false);
@@ -237,8 +234,8 @@ public class Game {
         FAIL_SYNC("Leider habt ihr die Zutaten nicht schnell genug hintereinander in den Kochtopf gegeben."),
 
         //TODO richtige nachrichten
-        WIN_SEQUENCE("NICE WIN SEQUENCE"),
-        WIN_SYNC("NICE WIN SYNC"),
+        WIN_SEQUENCE("Gut gemacht! Weiter gehts!"),
+        WIN_SYNC("Gut gemacht! Weiter gehts!"),
         WIN_GAME("Glückwunsch, ihr habt diese Spielrunde gewonnen!");
 
         private String message;
