@@ -130,7 +130,7 @@ public class KitchenServer extends JFrame implements Runnable {
             }
         });
         this.setSize(600, 400);
-        this.setIconImage(ImageIO.read(getClass().getResourceAsStream("/Drawables/CARROT.png")));
+        this.setIconImage(ImageIO.read(getClass().getResourceAsStream("/Drawables/FISH.png")));
         this.setVisible(true);
     }
 
