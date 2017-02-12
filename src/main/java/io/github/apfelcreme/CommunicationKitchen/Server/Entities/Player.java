@@ -184,7 +184,7 @@ public class Player {
                             this.carrying = null;
                             ConnectionHandler.broadcastRemovalFromHand(id);
                         } else {
-                            queueOrder.remove(Order.Result.FAILED, Game.Message.FAIL_SEQUENCE);
+                            queueOrder.remove(Order.Result.FAILED);
                             return;
                         }
 
@@ -213,8 +213,7 @@ public class Player {
         // was an order completed successfully?
         if ((order.getIngredients(Ingredient.Status.MISSING).size() == 0)
                 && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)) {
-            Game.Message reason = order instanceof SequenceOrder ? Game.Message.WIN_SEQUENCE : Game.Message.WIN_SYNC;
-            order.remove(Order.Result.SUCCESS, reason);
+            order.remove(Order.Result.SUCCESS);
         }
     }
 

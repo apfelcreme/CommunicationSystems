@@ -1,6 +1,7 @@
 package io.github.apfelcreme.CommunicationKitchen.Server.Order;
 
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
+import io.github.apfelcreme.CommunicationKitchen.Server.Game;
 import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
 
 import java.util.ArrayList;
@@ -49,5 +50,15 @@ public class SequenceOrder extends Order {
      */
     public int getNextQueuePosition() {
         return getIngredients(Ingredient.Status.WAS_DELIVERED).size();
+    }
+
+    @Override
+    public void remove(Result result) {
+        if (result == Result.FAILED) {
+            setEndingMessage(Game.Message.FAIL_SEQUENCE);
+        } else {
+            setEndingMessage(Game.Message.WIN_SEQUENCE);
+        }
+        super.remove(result);
     }
 }
