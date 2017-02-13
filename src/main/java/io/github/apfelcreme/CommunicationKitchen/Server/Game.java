@@ -178,9 +178,7 @@ public class Game {
      * @param reason - the reason for failing
      */
     public void handleFailure(Message reason) {
-
-        //TODO: Fixen, dass die nachrichten vernünftig erscheinen (bis jetzt nur ganz am ende)
-        if (failedOrders.size() == 0) {
+        if (failedOrders.size() == 1) {
             ConnectionHandler.broadcastMessage(reason);
             for (Player player : KitchenServer.getInstance().getPlayers()) {
                 player.setReady(false);
@@ -202,8 +200,7 @@ public class Game {
      * @param winMessage - the learned skill
      */
     public void handleSuccess(Message winMessage) {
-        //TODO: Fixen, dass die nachrichten vernünftig erscheinen (mal schauen wie am besten ist)
-        if (successfulOrders.size() == 0) {
+        if (successfulOrders.size() == 1) {
             ConnectionHandler.broadcastMessage(winMessage);
             for (Player player : KitchenServer.getInstance().getPlayers()) {
                 player.setReady(false);
@@ -237,9 +234,25 @@ public class Game {
         FAIL_SYNC("Leider habt ihr die Zutaten nicht schnell genug hintereinander in den Kochtopf gegeben."),
 
         //TODO richtige nachrichten
-        WIN_SEQUENCE("NICE WIN SEQUENCE"),
-        WIN_SYNC("NICE WIN SYNC"),
-        WIN_GAME("Glückwunsch, ihr habt diese Spielrunde gewonnen!");
+        WIN_SEQUENCE("Weiter so! Offenbar habt ihr verstanden, wie wichtig es ist, dass ihr eure Zusammenarbeit gut koordiniert. " +
+        		"Ein wichtiger Aspekt der Koordination ist die Betrachtung von Abhängigkeiten zwischen Aktivitäten. " + 
+        		"Indem ihr die Zutaten in der richtigen Reihenfolge in den Kochtopf gegeben habt, konntet ihr die Bestellung erfolgreich meistern."),
+        WIN_SYNC("Weiter so! Offenbar habt ihr verstanden, wie wichtig es ist, dass ihr eure Zusammenarbeit gut koordiniert. " +
+        		"Ein wichtiger Aspekt der Koordination ist die Betrachtung von zeitlichen Abhängigkeiten zwischen Aktivitäten. " + 
+        		"Indem ihr die Zutaten sehr schnell hintereinander in den Kochtopf gegeben habt, konntet ihr die Bestellung erfolgreich meistern."),
+        WIN_GAME("Glückwunsch, ihr habt diese Spielrunde gewonnen!<br />" +
+        		"Sicherlich habt ihr gemerkt, dass ihr mit jeder Runde besser geworden seid und dass Kommunikation ein erfolgsentscheidender Faktor war. " +
+        		"Nicht nur für die Koordination ist Kommunikation sehr wichtig, sondern auch für den Prozess der Gruppenbildung. " + 
+        		"Nach einem Modell von Bruce Tuckman durchlaufen neue Gruppen die Phasen Forming > Storming > Norming > Performing. " +
+        		"Im Kern besagt dieses Modell, dass sich Gruppenmitglieder zunächst finden und Regeln der Zusammenarbeit entwickeln müssen " + 
+        		"bevor sie als Gruppe ihr volles Leistungspotenzial entfalten können. " +
+        		"Wenn du deine Mitspieler vorher nicht kanntest, habt ihr jede dieser Phasen während des Spiels bewusst oder unbewusst durchlaufen. " +
+        		"Ihr musstet für jede neue Runde festlegen, wer welche Zutaten einsammelt. Doch wer von euch hat das immer bestimmt? " +
+        		"Wenn ihr bei jeder Runde erneut lange diskutiert habt, wer welche Zutaten sammelt, seid ihr nicht über die Norming-Phase hinausgekommen " +
+        		"und konntet das Spiel sicherlich nur mit intensivem Gebrauch der Pause-Funktion gewinnen. " +
+        		"Haben die Zuständigkeiten hingegen jedes Mal schnell festgestanden, habt ihr die Performing-Phase erreicht.<br />" +
+        		"Und die Quintessenz?<br />" +
+        		"Ihr könnt keine Phase überspringen, aber ihr könnt Phasen verkürzen, indem ihr Regeln der Zusammenarbeit explizit diskutiert!");
 
         private String message;
 

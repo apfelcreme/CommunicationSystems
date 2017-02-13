@@ -108,6 +108,7 @@ public class CommunicationKitchen extends JFrame {
 
         chat.setBackground(new Color(67, 67, 67));
         chat.setForeground(Color.WHITE);
+        chat.setCaretColor(Color.WHITE);
         chat.setBorder(BorderFactory.createEmptyBorder());
 
         bnSend.setForeground(new Color(200, 200, 200));
@@ -300,13 +301,7 @@ public class CommunicationKitchen extends JFrame {
         });
         bnPause.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {            	
-//                if (!paused) {
-//                	ServerConnector.getInstance().sendPause(me);
-//                } else {
-//                	ServerConnector.getInstance().sendResume(me);
-//                }
                 ServerConnector.getInstance().sendToggleGameState(me);
-                //toggleMessageBoard(true);
                 DrawingBoard.getInstance().requestFocus();
             }
         });

@@ -67,6 +67,7 @@ public class LoginWindow extends JFrame implements ActionListener {
         ip = new JTextField("127.0.0.1");
         ip.setBackground(new Color(67, 67, 67));
         ip.setForeground(new Color(200, 200, 200));
+        ip.setCaretColor(Color.WHITE);        
         ip.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         JLabel ipLabel = new JLabel("IP-Adresse");
         ipLabel.setForeground(new Color(200, 200, 200));
@@ -81,6 +82,7 @@ public class LoginWindow extends JFrame implements ActionListener {
         name = new JTextField("");
         name.setBackground(new Color(67, 67, 67));
         name.setForeground(new Color(200, 200, 200));
+        name.setCaretColor(Color.WHITE);
         name.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         JLabel nameLabel = new JLabel("Spielername");
         nameLabel.setForeground(new Color(200, 200, 200));

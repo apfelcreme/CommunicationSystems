@@ -73,6 +73,15 @@ public class ColorPicker extends JPanel {
             public void mouseExited(MouseEvent e) {
                 setCursor(Cursor.getDefaultCursor());
             }
+            
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            	if ((e.getX() > 0) && (e.getX() < width) && (e.getY() > 0) && (e.getY() < height)) {
+                    selectedColor = new Color(image.getRGB(e.getX(), e.getY()));
+                    repaint();
+                }
+            }
+                        
         });
 
     }

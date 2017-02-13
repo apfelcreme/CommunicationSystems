@@ -123,7 +123,7 @@ public class ConnectionHandler implements Runnable {
                 	if (game != null) {
 	                    UUID id = UUID.fromString(inputStream.readUTF());	                    
 	                    game.setPaused(!game.isPaused());
-	                    KitchenServer.getInstance().log("Player " + id + (game.isPaused() ? "paused" : "resumed") +  "the game");
+	                    KitchenServer.getInstance().log("Player " + id + (game.isPaused() ? " paused" : " resumed") +  " the game");
 	                    if(game.isPaused()) {
 	                    	broadcastPause();	                    	
 	                    } else {
@@ -139,7 +139,7 @@ public class ConnectionHandler implements Runnable {
 
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
