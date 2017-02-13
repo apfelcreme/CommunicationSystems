@@ -279,7 +279,8 @@ public class CommunicationKitchen extends JFrame {
                         "Wenn ihr die Bestellung nicht erfolgreich abschließen könnt, verliert ihr ein Leben!" +
                         "</left><br /><br />" +
                         "Mit W, A, S, D kannst du deine Figur steuern und mit der Leertaste aufgenommene Zutaten wieder abwerfen. <br />" +
-                        "Mit F1 kannst du den Chat nutzen und auch wieder verlassen.");
+                        "Mit Enter kannst du den Chat nutzen und Nachrichten verschicken. <br />" +
+                        "Nutze die Pause-Taste zum Pausieren des Spiels.");
 
         //Key Inputs
         initKeys();
