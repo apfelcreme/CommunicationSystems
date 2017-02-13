@@ -716,6 +716,11 @@ public class CommunicationKitchen extends JFrame {
                     DrawingBoard.getInstance().requestFocus();
                     keysPressed.remove(KeyEvent.VK_ENTER);
                 }
+            } 
+            
+            if (keysPressed.contains(KeyEvent.VK_PAUSE)) {
+            	ServerConnector.getInstance().sendToggleGameState(me);          	
+            	keysPressed.remove(KeyEvent.VK_PAUSE);
             }
         }
     }
