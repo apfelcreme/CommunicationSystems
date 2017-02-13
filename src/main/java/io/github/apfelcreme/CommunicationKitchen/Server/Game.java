@@ -74,13 +74,17 @@ public class Game {
                             notReady = false;
                         }
                     }
-                    System.out.println("WAITING");
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
                 Order order;
                 if (Math.random() >= 0.5) {
-                    order = new SyncOrder(UUID.randomUUID(), KitchenServer.getInstance().getPlayers().size(), time, 3000);
+                    order = new SyncOrder(UUID.randomUUID(), KitchenServer.getInstance().getPlayers().size() * 2, time, 3000);
                 } else {
-                    order = new SequenceOrder(UUID.randomUUID(), (int) ((KitchenServer.getInstance().getPlayers().size() + 1) * 1.5), time);
+                    order = new SequenceOrder(UUID.randomUUID(), (int) ((KitchenServer.getInstance().getPlayers().size() + 1) * 1.8), time);
                 }
                 runningOrders.add(order);
                 KitchenServer.getInstance().log("Order-Spawn: " + order.getClass().getName());
@@ -233,7 +237,7 @@ public class Game {
                 "ihr euch darauf einigen, wer welche Zutaten einsammelt. Du kannst dafür den Chat nutzen!"),
         FAIL_SYNC("Leider habt ihr die Zutaten nicht schnell genug hintereinander in den Kochtopf gegeben."),
 
-        //TODO richtige nachrichten
+        
         WIN_SEQUENCE("Weiter so! Offenbar habt ihr verstanden, wie wichtig es ist, dass ihr eure Zusammenarbeit gut koordiniert. " +
         		"Ein wichtiger Aspekt der Koordination ist die Betrachtung von Abhängigkeiten zwischen Aktivitäten. " + 
         		"Indem ihr die Zutaten in der richtigen Reihenfolge in den Kochtopf gegeben habt, konntet ihr die Bestellung erfolgreich meistern."),

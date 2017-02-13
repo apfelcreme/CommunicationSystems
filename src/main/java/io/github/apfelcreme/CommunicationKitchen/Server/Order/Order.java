@@ -35,11 +35,14 @@ public abstract class Order extends TimerTask {
     private long remainingTime;
     private Pot pot;
 
+    private Game.Message endingMessage = Game.Message.FAIL_TIME;
+
+
     public Order(UUID id, long time) {
         this.id = id;
         this.time = time;
         this.remainingTime = time;
-        new Timer().schedule(this, 100, 100);        
+        new Timer().schedule(this, 100, 100);
     }
 
     /**
@@ -47,7 +50,7 @@ public abstract class Order extends TimerTask {
      *
      * @param result the result of the order
      */
-    public void remove(Order.Result result, Game.Message reason) {
+    public void remove(Order.Result result) {
         // remove all ingredients from this order that are currently held by players
         for (Player player : KitchenServer.getInstance().getPlayers()) {
             for (Ingredient ingredient : ingredients) {
@@ -64,12 +67,12 @@ public abstract class Order extends TimerTask {
             KitchenServer.getInstance().log("Bestellung erfolgreich beendet");
             KitchenServer.getInstance().getGame().getRunningOrders().remove(this);
             KitchenServer.getInstance().getGame().getSuccessfulOrders().add(this);
-            KitchenServer.getInstance().getGame().handleSuccess(reason);
-        } else{
+            KitchenServer.getInstance().getGame().handleSuccess(endingMessage);
+        } else {
             KitchenServer.getInstance().log("Bestellung ist fehlgeschlagen!");
             KitchenServer.getInstance().getGame().getRunningOrders().remove(this);
             KitchenServer.getInstance().getGame().getFailedOrders().add(this);
-            KitchenServer.getInstance().getGame().handleFailure(reason);
+            KitchenServer.getInstance().getGame().handleFailure(endingMessage);
         }
 
         for (Ingredient ingredient : ingredients) {
@@ -145,16 +148,25 @@ public abstract class Order extends TimerTask {
     }
 
     /**
+     * sets the message the game is ending with
+     *
+     * @param endingMessage the message
+     */
+    public void setEndingMessage(Game.Message endingMessage) {
+        this.endingMessage = endingMessage;
+    }
+
+    /**
      * The action to be performed by this timer task.
      */
     @Override
     public void run() {
-    	if(!KitchenServer.getInstance().getGame().isPaused()) {
-    		remainingTime -= 100;
-    	}
-    	if (remainingTime <= 0) {
-    		remove(Result.FAILED, Game.Message.FAIL_TIME);
-    	}
+        if (!KitchenServer.getInstance().getGame().isPaused()) {
+            remainingTime -= 100;
+        }
+        if (remainingTime <= 0) {
+            remove(Result.FAILED);
+        }
     }
 
     /**

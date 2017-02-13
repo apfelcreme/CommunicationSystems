@@ -65,9 +65,19 @@ public class SyncOrder extends Order {
             public void run() {
                 if ((getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() != 0)
                         || (getIngredients(Ingredient.Status.MISSING).size() != 0)) {
-                    remove(Result.FAILED, Game.Message.FAIL_SYNC);
+                    remove(Result.FAILED);
                 }
             }
         }, timeFrame);
+    }
+
+    @Override
+    public void remove(Result result) {
+        if (result == Result.FAILED) {
+            setEndingMessage(Game.Message.FAIL_SYNC);
+        } else {
+            setEndingMessage(Game.Message.WIN_SYNC);
+        }
+        super.remove(result);
     }
 }

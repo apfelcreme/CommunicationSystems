@@ -68,7 +68,7 @@ public class CommunicationKitchen extends JFrame {
     private int round = 0;
     private boolean paused = false;
 
-    private JTextField chat = new JTextField("Chat");
+    private JTextField chat = new JTextField("");
     private JPanel messagePanel;
     private JButton messagePanelButton = new JButton("Ok!");
     private JButton bnSend = new JButton("Send");
@@ -108,8 +108,9 @@ public class CommunicationKitchen extends JFrame {
 
         chat.setBackground(new Color(67, 67, 67));
         chat.setForeground(Color.WHITE);
+        
         chat.setCaretColor(Color.WHITE);
-        chat.setBorder(BorderFactory.createEmptyBorder());
+        chat.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         bnSend.setForeground(new Color(200, 200, 200));
         bnSend.setBackground(new Color(67, 67, 67));
@@ -300,7 +301,9 @@ public class CommunicationKitchen extends JFrame {
             }
         });
         bnPause.addActionListener(new ActionListener() {
+
             public void actionPerformed(ActionEvent e) {            	
+
                 ServerConnector.getInstance().sendToggleGameState(me);
                 DrawingBoard.getInstance().requestFocus();
             }
@@ -536,14 +539,14 @@ public class CommunicationKitchen extends JFrame {
     }
 
     /**
-	 * @param paused the paused to set
-	 */
-	public void setPaused(boolean paused) {
-		this.paused = paused;
-		bnPause.setText(paused ? "Fortsetzen" : "Pause");
-	}
+     * @param paused the paused to set
+     */
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+        bnPause.setText(paused ? "Fortsetzen" : "Pause");
+    }
 
-	/**
+    /**
      * initializes all key events
      */
     public void initKeys() {
@@ -566,7 +569,7 @@ public class CommunicationKitchen extends JFrame {
         windowInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0, true), "f1_released");
         windowInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_PAUSE, 0, false), "pause_pressed");
         windowInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_PAUSE, 0, true), "pause_released");
-        
+
         InputMap inputMap = DrawingBoard.getInstance().getInputMap(JComponent.WHEN_FOCUSED);
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0, false), "w_pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, 0, true), "w_released");
@@ -575,15 +578,17 @@ public class CommunicationKitchen extends JFrame {
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "s_pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "s_released");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, false), "d_pressed");
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "d_released");       
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0, true), "d_released");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, false), "space_pressed");
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0, true), "space_released");
-                
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false), "enter_pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enter_released");
+
         InputMap chatInputMap = chat.getInputMap(JComponent.WHEN_FOCUSED);
         chatInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false), "enter_pressed");
         chatInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enter_released");
 
-        
+
         ActionMap actionMap = DrawingBoard.getInstance().getActionMap();
         actionMap.put("w_pressed", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
@@ -624,7 +629,7 @@ public class CommunicationKitchen extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 keysPressed.remove(KeyEvent.VK_D);
             }
-        });        
+        });
         actionMap.put("space_pressed", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 keysPressed.add(KeyEvent.VK_SPACE);
@@ -635,23 +640,23 @@ public class CommunicationKitchen extends JFrame {
                 keysPressed.remove(KeyEvent.VK_SPACE);
             }
         });
-        actionMap.put("f1_pressed", new AbstractAction() {
+        actionMap.put("enter_pressed", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                keysPressed.add(KeyEvent.VK_F1);
+                keysPressed.add(KeyEvent.VK_ENTER);
             }
         });
-        actionMap.put("f1_released", new AbstractAction() {
+        actionMap.put("enter_released", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                keysPressed.remove(KeyEvent.VK_F1);
+                keysPressed.remove(KeyEvent.VK_ENTER);
             }
         });
-        
+
         actionMap.put("pause_pressed", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 keysPressed.add(KeyEvent.VK_PAUSE);
             }
         });
-        
+
         ActionMap chatActionMap = chat.getActionMap();
         chatActionMap.put("enter_pressed", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
@@ -693,20 +698,24 @@ public class CommunicationKitchen extends JFrame {
             } else if (keysPressed.contains(KeyEvent.VK_SPACE) && !paused) {
                 ServerConnector.getInstance().sendItemDrop(me);
             } else if (keysPressed.contains(KeyEvent.VK_ENTER)) {
-            	ServerConnector.getInstance().sendChatMessage(me, chat.getText());
-                chat.setText("");
-                DrawingBoard.getInstance().requestFocus();
-                keysPressed.remove(KeyEvent.VK_ENTER);
-            } else if (keysPressed.contains(KeyEvent.VK_F1)) {
-            	if(DrawingBoard.getInstance().hasFocus()) {
-            		chat.requestFocus();
-            	} else {
-            		DrawingBoard.getInstance().requestFocus();
-            	}
-            	keysPressed.remove(KeyEvent.VK_F1);
-            } else if (keysPressed.contains(KeyEvent.VK_PAUSE)) {
-            	ServerConnector.getInstance().sendToggleGameState(me);          	
-            	keysPressed.remove(KeyEvent.VK_PAUSE);
+                if (chat.getText().isEmpty()) {
+                    // player has pressed enter to write something
+                    if (DrawingBoard.getInstance().hasFocus()) {
+                        chat.requestFocus();
+                        chat.setBackground(new Color(87, 87, 87));
+                    } else {
+                        DrawingBoard.getInstance().requestFocus();
+                        chat.setBackground(new Color(67, 67, 67));
+                    }
+                    keysPressed.remove(KeyEvent.VK_ENTER);
+                } else {
+                    // Player has entered a text and wants to send it
+                    ServerConnector.getInstance().sendChatMessage(me, chat.getText());
+                    chat.setBackground(new Color(67, 67, 67));
+                    chat.setText("");
+                    DrawingBoard.getInstance().requestFocus();
+                    keysPressed.remove(KeyEvent.VK_ENTER);
+                }
             }
         }
     }

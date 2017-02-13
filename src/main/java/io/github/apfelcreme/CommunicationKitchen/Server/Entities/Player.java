@@ -53,9 +53,6 @@ public class Player {
     }
 
     public void move(Direction direction) {
-        if (KitchenServer.getInstance().getGame() == null) {
-            return;
-        }
         int minX = 20;
         int minY = 20;
         int maxX = KitchenServer.getInstance().getFieldDimension().width - 20;
@@ -136,10 +133,12 @@ public class Player {
         }
 
         // can the player pickup or deliver an ingredient?
-        List<Order> copy = new ArrayList<Order>();
-        copy.addAll(KitchenServer.getInstance().getGame().getRunningOrders());
-        for (Order order : copy) {
-            checkForOrderCompletion(order);
+        if (KitchenServer.getInstance().getGame() != null) {
+            List<Order> copy = new ArrayList<Order>();
+            copy.addAll(KitchenServer.getInstance().getGame().getRunningOrders());
+            for (Order order : copy) {
+                checkForOrderCompletion(order);
+            }
         }
 
         // send a message to all clients, so they can redraw the position
@@ -185,7 +184,7 @@ public class Player {
                             this.carrying = null;
                             ConnectionHandler.broadcastRemovalFromHand(id);
                         } else {
-                            queueOrder.remove(Order.Result.FAILED, Game.Message.FAIL_SEQUENCE);
+                            queueOrder.remove(Order.Result.FAILED);
                             return;
                         }
 
@@ -214,8 +213,7 @@ public class Player {
         // was an order completed successfully?
         if ((order.getIngredients(Ingredient.Status.MISSING).size() == 0)
                 && (order.getIngredients(Ingredient.Status.IS_BEING_CARRIED).size() == 0)) {
-            Game.Message reason = order instanceof SequenceOrder ? Game.Message.WIN_SEQUENCE : Game.Message.WIN_SYNC;
-            order.remove(Order.Result.SUCCESS, reason);
+            order.remove(Order.Result.SUCCESS);
         }
     }
 
