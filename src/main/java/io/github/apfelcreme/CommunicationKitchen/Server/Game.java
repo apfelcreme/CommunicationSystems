@@ -97,14 +97,8 @@ public class Game {
                             ingredient.getX(),
                             ingredient.getY());
                 }
-                Pot pot = new Pot(
-                        UUID.randomUUID(),
-                        40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().width - 80),
-                        40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().height - 80)
-                );
-                KitchenServer.getInstance().log("Pot-Spawn (" + pot.getX() + "," + pot.getY() + ")");
-                order.setPot(pot);
-                ConnectionHandler.broadcastAddDrawable(pot.getId(), -1, DrawableType.POT, pot.getX(), pot.getY());
+
+
                 ConnectionHandler.broadcastNewOrder(order);
                 ConnectionHandler.broadcastLives(currentLives);
             }

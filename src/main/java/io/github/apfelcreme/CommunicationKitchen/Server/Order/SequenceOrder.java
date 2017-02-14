@@ -3,6 +3,7 @@ package io.github.apfelcreme.CommunicationKitchen.Server.Order;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Ingredient;
 import io.github.apfelcreme.CommunicationKitchen.Server.Game;
 import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
+import io.github.apfelcreme.CommunicationKitchen.Util.Util;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -33,14 +34,20 @@ public class SequenceOrder extends Order {
 
         // spawn n ingredients
         this.ingredients = new ArrayList<Ingredient>();
-        for (int i = 1; i <= amount; i++) {
-            Ingredient ingredient = new Ingredient(
-                    UUID.randomUUID(),
-                    i,
-                    Ingredient.Type.random(),
-                    40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().width - 60),
-                    40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().height - 60));
-            ingredients.add(ingredient);
+        double distance = 0;
+        while (distance < (amount * 200)) {
+            distance = 0;
+            ingredients.clear();
+            for (int i = 1; i <= amount; i++) {
+                Ingredient ingredient = new Ingredient(
+                        UUID.randomUUID(),
+                        i,
+                        Ingredient.Type.random(),
+                        40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().width - 60),
+                        40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().height - 60));
+                ingredients.add(ingredient);
+                distance += Util.getDistance(getPot().getX(), getPot().getY(), ingredient.getX(), ingredient.getY());
+            }
         }
     }
 
