@@ -38,8 +38,7 @@ import java.util.*;
 
 /**
  * food-sprites: https://ccrgeek.wordpress.com/rpg-maker-ace/graphics/character-sprites/
- * alarm-clock: http://downloadicons.net/android-powered-alarm-clock-icon-74359
- * order-symbol: http://www.flaticon.com/free-icon/medical-notes-symbol-of-a-list-paper-on-a-clipboard_45945
+ * frying-pan: http://pixeljoint.com/pixelart/8451.htm
  */
 
     /*
@@ -279,8 +278,7 @@ public class CommunicationKitchen extends JFrame {
                         "Wenn ihr die Bestellung nicht erfolgreich abschließen könnt, verliert ihr ein Leben!" +
                         "</left><br /><br />" +
                         "Mit W, A, S, D kannst du deine Figur steuern und mit der Leertaste aufgenommene Zutaten wieder abwerfen. <br />" +
-                        "Mit Enter kannst du den Chat nutzen und Nachrichten verschicken. <br />" +
-                        "Nutze die Pause-Taste zum Pausieren des Spiels.");
+                        "Mit F1 kannst du den Chat nutzen und auch wieder verlassen.");
 
         //Key Inputs
         initKeys();

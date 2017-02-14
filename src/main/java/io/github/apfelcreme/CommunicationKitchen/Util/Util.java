@@ -82,6 +82,19 @@ public class Util {
     }
 
     /**
+     * returns the distance between two points
+     *
+     * @param x1 x of object 1
+     * @param y1 y of object 1
+     * @param x2 x of object 2
+     * @param y2 y of object 2
+     * @return the distance between two points
+     */
+    public static double getDistance(int x1, int y1, int x2, int y2) {
+        return Math.sqrt(Math.pow(Math.abs(x1 - x2), 2) + Math.pow(Math.abs(y1 - y2), 2));
+    }
+
+    /**
      * colorizes the player image
      *
      * @param image the player image

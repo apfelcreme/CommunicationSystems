@@ -6,6 +6,7 @@ import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Player;
 import io.github.apfelcreme.CommunicationKitchen.Server.Entities.Pot;
 import io.github.apfelcreme.CommunicationKitchen.Server.Game;
 import io.github.apfelcreme.CommunicationKitchen.Server.KitchenServer;
+import io.github.apfelcreme.CommunicationKitchen.Util.DrawableType;
 
 import java.util.*;
 
@@ -43,6 +44,13 @@ public abstract class Order extends TimerTask {
         this.time = time;
         this.remainingTime = time;
         new Timer().schedule(this, 100, 100);
+
+        pot = new Pot(
+                UUID.randomUUID(),
+                40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().width - 80),
+                40 + new Random().nextInt(KitchenServer.getInstance().getFieldDimension().height - 80)
+        );
+        ConnectionHandler.broadcastAddDrawable(pot.getId(), -1, DrawableType.POT, pot.getX(), pot.getY());
     }
 
     /**
